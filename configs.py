@@ -5,7 +5,7 @@ class Config(object):
   API_HASH = os.environ.get("API_HASH", "f19aed00b0c74abed0359016afc1733f") 
   
   BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-  BOT_USERNAME = os.environ.get("BOT_USERNAME", "QL_MoviesBot")
+  BOT_USERNAME = os.environ.get("BOT_USERNAME", "ShareMoviesQLBot")
   LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1001924724963"))
   UPDATES_CHANNEL = os.environ.get("UPDATES_CHANNEL", "-1002025747602")
   
