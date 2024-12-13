@@ -173,6 +173,25 @@ async def main(bot: Client, message: Message):
                 disable_web_page_preview=True
             )
 
+# Function to send a message to all users
+async def broadcast_message(message: Message):
+    all_users = await db.get_all_users()  # Fetch all user IDs from your database
+    total_users = 0
+    success = 0
+    failed = 0
+    
+    async for user in all_users:
+        try:
+            await message.copy(chat_id=int(user['id']))  # Copy and send the message
+            success += 1
+        except Exception as e:
+            failed += 1
+        total_users += 1
+
+# Detect messages from the specified channel
+@Bot.on_message(filters.chat(Config.CHANNEL_ID))
+async def handle_channel_message(bot: Client, message: Message):
+    await broadcast_message(message)  # Broadcast the message to all users
 
 @Bot.on_message(filters.private & filters.command("broadcast") & filters.user(Config.BOT_OWNER) & filters.reply)
 async def broadcast_handler_open(_, m: Message):
