@@ -8,6 +8,7 @@ class Config(object):
   BOT_USERNAME = os.environ.get("BOT_USERNAME", "QL_Hollywood_Dubbed_Movies_Bot")
   LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1002025122235"))
   UPDATES_CHANNEL = os.environ.get("UPDATES_CHANNEL", "-1002025747602")
+  CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002478513434"))
 
   DB_CHANNEL = int(os.environ.get("DB_CHANNEL", "-1002038837206")) #Common
   SHORTLINK_URL = os.environ.get('SHORTLINK_URL', "modijiurl.com")
