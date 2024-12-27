@@ -66,12 +66,25 @@ async def forward_to_channel(bot: Client, message: Message, editable: Message):
 async def save_batch_media_in_channel(bot: Client, editable: Message, message_ids: list):
     try:
         message_ids_str = ""
+        file_sizes = []
         for message in (await bot.get_messages(chat_id=editable.chat.id, message_ids=message_ids)):
             sent_message = await forward_to_channel(bot, message, editable)
             if sent_message is None:
                 continue
+            # Check if the message contains a file and retrieve the size
+            file_size = None
+            if message.document:
+                file_size = message.document.file_size
+            elif message.video:
+                file_size = message.video.file_size
+            elif message.audio:
+                file_size = message.audio.file_size
+            
+            if file_size is not None:
+                file_sizes.append(humanbytes(file_size))
             message_ids_str += f"{str(sent_message.id)} "
             await asyncio.sleep(2)
+        file_sizes.sort()
         SaveMessage = await bot.send_message(
             chat_id=Config.DB_CHANNEL,
             text=message_ids_str,
@@ -82,8 +95,10 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, message_id
         )
         share_link = f"https://telegram.me/{Config.BOT_USERNAME}?start=Tamilan_{str_to_b64(str(SaveMessage.id))}"
         short_link = get_short(share_link)
+        output_lines = [f"{size} - {short_link}" for size in file_sizes]
+        final_output = "\n\n".join(output_lines)
         await editable.edit(
-            f"**Batch Files Stored in my Database!**\n\nHere is the Permanent Link of your files: **Short Link - ** <code>{short_link}</code> \n\n**Original Link - ** <code>{share_link}</code> \n\n"
+            f"**Batch Files Stored in my Database!**\n\nHere is the Permanent Link of your files: **Sorted Files by Size:**\n<code>{final_output}</code> \n\n**Short Link - ** <code>{short_link}</code> \n\n**Original Link - ** <code>{share_link}</code> \n\n"
             f"Just Click the link to get your files!",
             reply_markup=InlineKeyboardMarkup(
                 [[InlineKeyboardButton("Original Link", url=share_link),
