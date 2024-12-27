@@ -91,6 +91,7 @@ async def start(bot: Client, cmd: Message):
                 file_id = int(usr_cmd.split("_")[-1])
             GetMessage = await bot.get_messages(chat_id=Config.DB_CHANNEL, message_ids=file_id)
             message_ids = []
+            file_data = []  # To store (file_size, message_id) tuples
             if GetMessage.text:
                 message_ids = GetMessage.text.split(" ")
                 _response_msg = await cmd.reply_text(
@@ -100,8 +101,29 @@ async def start(bot: Client, cmd: Message):
                 )
             else:
                 message_ids.append(int(GetMessage.id))
-            for i in range(len(message_ids)):
-                await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(message_ids[i]))
+            # Retrieve file sizes and store them along with message IDs
+            for msg_id in message_ids:
+                message = await bot.get_messages(chat_id=Config.DB_CHANNEL, message_ids=int(msg_id))
+                if message.document:
+                    file_size = message.document.file_size
+                elif message.video:
+                    file_size = message.video.file_size
+                elif message.audio:
+                    file_size = message.audio.file_size
+                else:
+                    file_size = None
+                
+                if file_size is not None:
+                    file_data.append((file_size, msg_id))
+            
+            # Sort the files by size (ascending order)
+            file_data.sort(key=lambda x: x[0])
+
+            # Send files in sorted order
+            for file_size, msg_id in file_data:
+                await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(msg_id))
+           # for i in range(len(message_ids)):
+             #   await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(message_ids[i]))
         except Exception as err:
             await cmd.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
 
@@ -174,25 +196,52 @@ async def main(bot: Client, message: Message):
             )
 
 # Function to send a message to all users
-async def broadcast_message(message: Message):
+async def broadcast_message(bot: Client, message: Message):
     all_users = await db.get_all_users()  # Fetch all user IDs from your database
     total_users = 0
     success = 0
     failed = 0
     
+    # Store the message IDs and user IDs for deletion
+    sent_messages = []
+
     async for user in all_users:
         try:
-            await message.copy(chat_id=int(user['id']))  # Copy and send the message
+            sent_message = await message.copy(chat_id=int(user['id']))  # Copy and send the message
+            sent_messages.append((user['id'], sent_message.id))  # Store user ID and message ID
             success += 1
         except Exception as e:
+            print(f"Failed to send message to {user['id']}: {e}")
             failed += 1
         total_users += 1
+
+    # Schedule a task to delete the messages after 12 hours
+    asyncio.create_task(schedule_deletion(bot, sent_messages, delay=43200))
+
+async def schedule_deletion(bot: Client, messages: list, delay: int):
+    """  
+    Schedules deletion of messages after a given delay.
+    Args:
+        bot (Client): The bot instance.
+        messages (list): List of tuples containing user_id and message_id.
+        delay (int): Delay in seconds before deletion. 
+    """
+    await asyncio.sleep(delay)  # Wait for the specified delay
+
+    for user_id, msg_id in messages:
+        try:
+            await bot.delete_messages(chat_id=user_id, message_ids=msg_id)
+            print(f"Deleted message {msg_id} for user {user_id}")
+        except Exception as e:
+            print(f"Failed to delete message {msg_id} for user {user_id}: {e}")
 
 # Detect messages from the specified channel
 @Bot.on_message(filters.chat(Config.CHANNEL_ID))
 async def handle_channel_message(bot: Client, message: Message):
-    await broadcast_message(message)  # Broadcast the message to all users
-
+    #await main_broadcast_handler(message, db)
+   print(f"New message from channel: {message.text or 'Media Content'}")
+   await broadcast_message(bot, message)  # Broadcast the message to all users
+        
 @Bot.on_message(filters.private & filters.command("broadcast") & filters.user(Config.BOT_OWNER) & filters.reply)
 async def broadcast_handler_open(_, m: Message):
     await main_broadcast_handler(m, db)
@@ -225,7 +274,7 @@ async def ban(c: Client, m: Message):
         user_id = int(m.command[1])
         ban_duration = int(m.command[2])
         ban_reason = ' '.join(m.command[3:])
-        ban_log_text = f"Banning user {user_id} for {ban_duration} days for the reason {ban_reason}."
+        ban_log_text =f"Banning user {user_id} for {ban_duration} days for the reason {ban_reason}."
         try:
             await c.send_message(
                 user_id,
@@ -398,7 +447,7 @@ async def button(bot: Client, cmd: CallbackQuery):
                     )
                     return
             except UserNotParticipant:
-                invite_link = await get_invite_link(bot, channel_chat_id)
+                invite_link = await get_invite_link(channel_chat_id)
                 await cmd.message.edit(
                     text="**I like Your Smartness But Don't Be Oversmart! 😑**\n\n",
                     reply_markup=InlineKeyboardMarkup(
