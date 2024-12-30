@@ -5,8 +5,8 @@ class Config(object):
   API_HASH = os.environ.get("API_HASH", "f19aed00b0c74abed0359016afc1733f")
 
   BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-  BOT_USERNAME = os.environ.get("BOT_USERNAME", "Bigg_BossTamil_Bot")
-  LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1002434006200"))
+  BOT_USERNAME = os.environ.get("BOT_USERNAME", "Zee5_Tamil_Shows_Bot")
+  LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1002396543774"))
   UPDATES_CHANNEL = os.environ.get("UPDATES_CHANNEL", "-1002250117533")
   CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002478745942"))
 
