@@ -18,6 +18,17 @@ def replace_prefix(text, new_prefix="[@Tamilan_Rocks]"):
         # Add the new prefix with proper formatting
         return f"**{new_prefix} - {text}**"
     return f"**{new_prefix}**"
+
+def replace_prefix(text, new_prefix="[@Tamilan_Rocks]"):
+    if text:
+        # Remove any existing prefix and trailing characters like '-', '.', or spaces
+        text = re.sub(r"^[@\[\{]?[a-zA-Z0-9_]+[\]\}]?[\-\.\s]*", "", text)
+        # Avoid duplicate prefixes
+        if text.startswith(new_prefix):
+            return f"**{text}**"
+        # Add the new prefix with a proper separator
+        return f"**{new_prefix} - {text}**"
+    return f"**{new_prefix}**"
     
 async def reply_forward(message: Message, file_id: int):
     try:
