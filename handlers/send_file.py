@@ -26,15 +26,15 @@ async def media_forward(bot: Client, user_id: int, file_id: int):
         message = await bot.get_messages(chat_id=Config.DB_CHANNEL, message_ids=file_id)
 
         # Helper function to modify captions and filenames
-        def replace_prefix(text, new_prefix="[@Tamilan_Rocks]"):
+        def replace_prefix(text, new_prefix="[@Tamilan_Rockers]"):
             if text:
                 # Replace any prefix like @anything, [@anything], or {anything} with the new prefix
                 text = re.sub(r"^[@\[\{]?[a-zA-Z0-9_]+[\]\}]?", new_prefix, text)
                 # Only append " - " if the text was modified
                 if not text.startswith(new_prefix):
-                    return f"{new_prefix} - {text}"
-                return text
-            return new_prefix
+                    return f"**{new_prefix} - {text}**"  # Bold file name
+                return f"**{text}**"  # Bold file name
+            return f"**{new_prefix}**"
 
         # Mapping of media types to their corresponding send methods
         media_types = {
