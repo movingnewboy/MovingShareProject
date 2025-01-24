@@ -12,16 +12,7 @@ from handlers.helpers import str_to_b64
 # Helper function to replace prefixes in filenames and captions
 def replace_prefix(text, new_prefix="[@Tamilan_Rocks]"):
     if text:
-        # Replace any prefix like @something, [something], or {something}, and clean trailing chars
-        #text = re.sub(r"^[@\[\{]?[a-zA-Z0-9_]+[\]\}]?[\.\-\s]*", "", text)
-        text = re.sub(r"^[@\[\{]?[a-zA-Z0-9_]+[\]\}]?[\-\s]*", "", text)
-        # Add the new prefix with proper formatting
-        return f"**{new_prefix} - {text}**"
-    return f"**{new_prefix}**"
-
-def replace_prefix(text, new_prefix="[@Tamilan_Rocks]"):
-    if text:
-        # Remove any existing prefix and trailing characters like '-', '.', or spaces
+        # Remove any existing prefix like @something, [something], or {something}, and clean trailing chars
         text = re.sub(r"^[@\[\{]?[a-zA-Z0-9_]+[\]\}]?[\-\.\s]*", "", text)
         # Avoid duplicate prefixes
         if text.startswith(new_prefix):
@@ -29,18 +20,28 @@ def replace_prefix(text, new_prefix="[@Tamilan_Rocks]"):
         # Add the new prefix with a proper separator
         return f"**{new_prefix} - {text}**"
     return f"**{new_prefix}**"
-    
+
+
+# Function to send a reply with a custom message
 async def reply_forward(message: Message, file_id: int):
     try:
+        reply_text = (
+            f"**✅ Join Our Main Channel 👇**\n\n"
+            f"**👉 Join - https://t.me/+EQti1KNCQnk5MmY1**\n\n"
+            f"Files will be deleted in 12 hours to avoid copyright issues. Please forward and save them."
+        )
         await message.reply_text(
-            f"**✅Join Our Main Channel 👇** \n\n **👉 Join - https://t.me/+EQti1KNCQnk5MmY1 ** \n\nFiles will be deleted in 12 hours to avoid copyright issues. Please forward and save them.",
+            reply_text,
             disable_web_page_preview=True,
-            quote=True
+            quote=True,
         )
     except FloodWait as e:
+        # Handle rate-limiting
         await asyncio.sleep(e.x)
         await reply_forward(message, file_id)
 
+
+# Function to forward or send media with modified captions or filenames
 async def media_forward(bot: Client, user_id: int, file_id: int):
     try:
         # Fetch the original message
@@ -74,23 +75,38 @@ async def media_forward(bot: Client, user_id: int, file_id: int):
                     caption=caption,
                     file_name=file_name,
                 )
-            
-        if Config.FORWARD_AS_COPY is True:
-            return await bot.copy_message(chat_id=user_id, from_chat_id=Config.DB_CHANNEL,
-                                          message_id=file_id)
-        elif Config.FORWARD_AS_COPY is False:
-            return await bot.forward_messages(chat_id=user_id, from_chat_id=Config.DB_CHANNEL,
-                                              message_ids=file_id)
-    except FloodWait as e:
-        await asyncio.sleep(e.value)
-        return media_forward(bot, user_id, file_id)
-        await message.delete()
 
+        # Handle unsupported media types with forwarding
+        if Config.FORWARD_AS_COPY:
+            return await bot.copy_message(
+                chat_id=user_id,
+                from_chat_id=Config.DB_CHANNEL,
+                message_id=file_id,
+            )
+        else:
+            return await bot.forward_messages(
+                chat_id=user_id,
+                from_chat_id=Config.DB_CHANNEL,
+                message_ids=file_id,
+            )
+
+    except FloodWait as e:
+        # Handle Telegram's rate-limiting
+        await asyncio.sleep(e.value)
+        return await media_forward(bot, user_id, file_id)
+
+
+# Function to send media and reply with a custom message
 async def send_media_and_reply(bot: Client, user_id: int, file_id: int):
+    # Forward or send media
     sent_message = await media_forward(bot, user_id, file_id)
+    # Send a follow-up reply
     await reply_forward(message=sent_message, file_id=file_id)
+    # Schedule message deletion after 12 hours (43200 seconds)
     asyncio.create_task(delete_after_delay(sent_message, 43200))
 
-async def delete_after_delay(message, delay):
+
+# Function to delete messages after a delay
+async def delete_after_delay(message: Message, delay: int):
     await asyncio.sleep(delay)
     await message.delete()
