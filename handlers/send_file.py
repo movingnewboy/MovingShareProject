@@ -13,7 +13,8 @@ from handlers.helpers import str_to_b64
 def replace_prefix(text, new_prefix="[@Tamilan_Rocks]"):
     if text:
         # Replace any prefix like @something, [something], or {something}, and clean trailing chars
-        text = re.sub(r"^[@\[\{]?[a-zA-Z0-9_]+[\]\}]?[\.\-\s]*", "", text)
+        #text = re.sub(r"^[@\[\{]?[a-zA-Z0-9_]+[\]\}]?[\.\-\s]*", "", text)
+        text = re.sub(r"^[@\[\{]?[a-zA-Z0-9_]+[\]\}]?[\-\s]*", "", text)
         # Add the new prefix with proper formatting
         return f"**{new_prefix} - {text}**"
     return f"**{new_prefix}**"
