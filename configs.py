@@ -5,9 +5,9 @@ class Config(object):
   API_HASH = os.environ.get("API_HASH", "f19aed00b0c74abed0359016afc1733f")
 
   BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-  BOT_USERNAME = os.environ.get("BOT_USERNAME", "QL_Series_Bot")
+  BOT_USERNAME = os.environ.get("BOT_USERNAME", "Tamil_Web_Series_All_Bot")
   LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1002475103221"))
-  UPDATES_CHANNEL = os.environ.get("UPDATES_CHANNEL", "-1002250117533")
+  UPDATES_CHANNEL = os.environ.get("UPDATES_CHANNEL", "-1002028128566")
   CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002439773458"))
 
   DB_CHANNEL = int(os.environ.get("DB_CHANNEL", "-1002038837206")) #Common
