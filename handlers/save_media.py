@@ -130,11 +130,13 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
     try:
         message_ids_str = ""
         file_sizes = []
+        sent_messages = []
         
         # Get the messages by IDs stored in the MediaList for the user
         for message_id in MediaList.get(user_id, []):
             message = await bot.get_messages(chat_id=editable.chat.id, message_ids=message_id)
             sent_message = await forward_to_channel(bot, message, editable)
+            sent_messages.append(sent_message)
             if sent_message is None:
                 continue
             
@@ -171,8 +173,21 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
         final_output = "\n\n".join(output_lines)
 
         # Send the final message to the user with links
-        await bot.send_message(
-            chat_id=editable.chat.id,
+        # await bot.send_message(
+        #     chat_id=editable.chat.id,
+        #     text=(
+        #         f"**Batch Files Stored in my Database!**\n\nHere is the Permanent Link of your files: **Sorted Files by Size:**\n<code>{final_output}</code> \n\n"
+        #         f"**Short Link - ** <code>{short_link}</code> \n\n**Original Link - ** <code>{share_link}</code> \n\n"
+        #         f"Just Click the link to get your files!"
+        #     ),
+        #     reply_markup=InlineKeyboardMarkup(
+        #         [[InlineKeyboardButton("Original Link", url=share_link),
+        #           InlineKeyboardButton("Short Link", url=short_link)]]
+        #     ),
+        #     disable_web_page_preview=True
+        # )
+
+         await message.reply_tex(
             text=(
                 f"**Batch Files Stored in my Database!**\n\nHere is the Permanent Link of your files: **Sorted Files by Size:**\n<code>{final_output}</code> \n\n"
                 f"**Short Link - ** <code>{short_link}</code> \n\n**Original Link - ** <code>{share_link}</code> \n\n"
