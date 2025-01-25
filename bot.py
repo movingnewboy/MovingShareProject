@@ -229,7 +229,14 @@ async def main(bot: Client, message: Message):
                 text=f"#ERROR_TRACEBACK:\nGot Error from `{str(message.chat.id)}` !!\n\n**Traceback:** `{err}`",
                 disable_web_page_preview=True
             )
-
+def get_short(url):
+    rget = requests.get(f"https://{Config.SHORTLINK_URL}/api?api={Config.SHORTLINK_API}&url={url}&alias={generate_random_alphanumeric()}")
+    rjson = rget.json()
+    if rjson["status"] == "success" or rget.status_code == 200:
+        return rjson["shortenedUrl"]
+    else:
+        return url
+        
 async def forward_to_channel(bot: Client, message: Message, editable: Message):
     try:
         # Forward the message to the DB_CHANNEL
