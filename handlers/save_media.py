@@ -195,8 +195,8 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
             # If file names are different, combine them into a list
             file_list = "\n".join([f"👉 {name}" for name in file_names])
             text = (
-                f"**Batch Files Stored in my Database!**\n\nHere are your files:\n{file_list}\n\n"
-                f"✅ All in one Link - <code>{short_link}</code>\n\n"
+                f"**Batch Files Stored in my Database!**\n\nHere are your files:\n"
+                f"<code>{file_list}\n\n✅ All in one Link - {short_link}</code>\n\n"
                 f"Just Click the link to get your files!"
             )
 
