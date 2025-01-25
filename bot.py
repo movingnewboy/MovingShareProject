@@ -180,7 +180,7 @@ async def main(bot: Client, message: Message):
         await message.reply_text("Please wait, generating batch link ...", disable_web_page_preview=True)
         # Now that 5 seconds have passed, generate the batch link
         if user_id in MediaList and MediaList[user_id]:
-            await save_batch_media_in_channel(bot, message, user_id)
+            await save_batch_media_in_channel(bot, message, message_ids)
             MediaList[user_id] = []  # Clear the batch after saving and generating the link
 
         # await message.reply_text(
