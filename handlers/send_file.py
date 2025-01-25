@@ -29,7 +29,7 @@ async def media_forward(bot: Client, user_id: int, file_id: int):
         def replace_prefix(text, new_prefix="[@Tamilan_Rocks]"):
             if text:
                 # Replace any prefix like @anything, [@anything], or {anything} with the new prefix
-                text = re.sub(r"^[@\[\{]?[a-zA-Z0-9_]+[\]\}]?", new_prefix, text)
+                text = re.sub(r"^[@\[\{][a-zA-Z0-9_]+[\]\}]?", new_prefix, text)
                 # Only append " - " if the text was modified
                 if not text.startswith(new_prefix):
                     return f"**{new_prefix} - {text}**"  # Bold file name
