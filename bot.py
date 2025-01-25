@@ -1,5 +1,6 @@
 # (c) @TeleRoidGroup || @PredatorHackerzZ
 
+import requests
 import os
 import asyncio
 import traceback
