@@ -254,12 +254,12 @@ async def main(bot: Client, message: Message):
 
         # Check if the token has expired (no new files during the wait period)
         if token_start_time is not None:  # Ensure no other files were added
+            token_start_time = None
             # Generate the batch link
             await message.reply_text("Please wait, generating batch link ...", disable_web_page_preview=True)
             await save_batch_media_in_channel(bot, message, user_id)
     
             # Reset the token and clear the batch
-            token_start_time = None
             MediaList[user_id] = []
         
         
