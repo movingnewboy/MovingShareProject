@@ -63,14 +63,83 @@ async def forward_to_channel(bot: Client, message: Message, editable: Message):
         return await forward_to_channel(bot, message, editable)
 
 
-async def save_batch_media_in_channel(bot: Client, editable: Message, message_ids: list):
+# async def save_batch_media_in_channel(bot: Client, editable: Message, message_ids: list):
+#     try:
+#         message_ids_str = ""
+#         file_sizes = []
+#         for message in (await bot.get_messages(chat_id=editable.chat.id, message_ids=message_ids)):
+#             sent_message = await forward_to_channel(bot, message, editable)
+#             if sent_message is None:
+#                 continue
+#             # Check if the message contains a file and retrieve the size
+#             file_size = None
+#             if message.document:
+#                 file_size = message.document.file_size
+#             elif message.video:
+#                 file_size = message.video.file_size
+#             elif message.audio:
+#                 file_size = message.audio.file_size
+            
+#             if file_size is not None:
+#                 file_sizes.append(file_size)
+#             message_ids_str += f"{str(sent_message.id)} "
+#             await asyncio.sleep(2)
+#         file_sizes.sort()
+#         SaveMessage = await bot.send_message(
+#             chat_id=Config.DB_CHANNEL,
+#             text=message_ids_str,
+#             disable_web_page_preview=True,
+#             reply_markup=InlineKeyboardMarkup([[
+#                 InlineKeyboardButton("Delete Batch", callback_data="closeMessage")
+#             ]])
+#         )
+#         share_link = f"https://telegram.me/{Config.BOT_USERNAME}?start=Tamilan_{str_to_b64(str(SaveMessage.id))}"
+#         short_link = get_short(share_link)
+#         output_lines = [f"{humanbytes(size)} - {short_link}" for size in file_sizes]
+#         final_output = "\n\n".join(output_lines)
+#         await editable.edit(
+#             f"**Batch Files Stored in my Database!**\n\nHere is the Permanent Link of your files: **Sorted Files by Size:**\n<code>{final_output}</code> \n\n**Short Link - ** <code>{short_link}</code> \n\n**Original Link - ** <code>{share_link}</code> \n\n"
+#             f"Just Click the link to get your files!",
+#             reply_markup=InlineKeyboardMarkup(
+#                 [[InlineKeyboardButton("Original Link", url=share_link),
+#                   InlineKeyboardButton("Short Link", url=short_link)]]
+#             ),
+#             disable_web_page_preview=True
+#         )
+#         await bot.send_message(
+#             chat_id=int(Config.LOG_CHANNEL),
+#             text=f"#BATCH_SAVE:\n\n[{editable.reply_to_message.from_user.first_name}](tg://user?id={editable.reply_to_message.from_user.id}) Got Batch Link!",
+#             disable_web_page_preview=True,
+#             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Original Link", url=short_link),
+#                                                 InlineKeyboardButton("Short Link", url=share_link)]])
+#         )
+#     except Exception as err:
+#         await editable.edit(f"Something Went Wrong!\n\n**Error:** `{err}`")
+#         await bot.send_message(
+#             chat_id=int(Config.LOG_CHANNEL),
+#             text=f"#ERROR_TRACEBACK:\nGot Error from `{str(editable.chat.id)}` !!\n\n**Traceback:** `{err}`",
+#             disable_web_page_preview=True,
+#             reply_markup=InlineKeyboardMarkup(
+#                 [
+#                     [InlineKeyboardButton("Ban User", callback_data=f"ban_user_{str(editable.chat.id)}")]
+#                 ]
+#             )
+#         )
+
+async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: str, MediaList: dict):
     try:
         message_ids_str = ""
         file_sizes = []
-        for message in (await bot.get_messages(chat_id=editable.chat.id, message_ids=message_ids)):
+        sent_messages = []
+        
+        # Get the messages by IDs stored in the MediaList for the user
+        for message_id in MediaList.get(user_id, []):
+            message = await bot.get_messages(chat_id=editable.chat.id, message_ids=message_id)
             sent_message = await forward_to_channel(bot, message, editable)
+            sent_messages.append(sent_message)
             if sent_message is None:
                 continue
+            
             # Check if the message contains a file and retrieve the size
             file_size = None
             if message.document:
@@ -84,6 +153,7 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, message_id
                 file_sizes.append(file_size)
             message_ids_str += f"{str(sent_message.id)} "
             await asyncio.sleep(2)
+
         file_sizes.sort()
         SaveMessage = await bot.send_message(
             chat_id=Config.DB_CHANNEL,
@@ -93,26 +163,48 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, message_id
                 InlineKeyboardButton("Delete Batch", callback_data="closeMessage")
             ]])
         )
+
+        # Generate the links
         share_link = f"https://telegram.me/{Config.BOT_USERNAME}?start=Tamilan_{str_to_b64(str(SaveMessage.id))}"
         short_link = get_short(share_link)
+
+        # Prepare the output text with file sizes and links
         output_lines = [f"{humanbytes(size)} - {short_link}" for size in file_sizes]
         final_output = "\n\n".join(output_lines)
-        await editable.edit(
-            f"**Batch Files Stored in my Database!**\n\nHere is the Permanent Link of your files: **Sorted Files by Size:**\n<code>{final_output}</code> \n\n**Short Link - ** <code>{short_link}</code> \n\n**Original Link - ** <code>{share_link}</code> \n\n"
-            f"Just Click the link to get your files!",
+
+        # Send the final message to the user with links
+        await bot.send_message(
+            chat_id=editable.chat.id,
+            text=(
+                f"**Batch Files Stored in my Database!**\n\nHere is the Permanent Link of your files: **Sorted Files by Size:**\n<code>{final_output}</code> \n\n"
+                f"**Short Link - ** <code>{short_link}</code> \n\n**Original Link - ** <code>{share_link}</code> \n\n"
+                f"Just Click the link to get your files!"
+            ),
             reply_markup=InlineKeyboardMarkup(
                 [[InlineKeyboardButton("Original Link", url=share_link),
                   InlineKeyboardButton("Short Link", url=short_link)]]
             ),
             disable_web_page_preview=True
         )
-        await bot.send_message(
-            chat_id=int(Config.LOG_CHANNEL),
-            text=f"#BATCH_SAVE:\n\n[{editable.reply_to_message.from_user.first_name}](tg://user?id={editable.reply_to_message.from_user.id}) Got Batch Link!",
-            disable_web_page_preview=True,
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Original Link", url=short_link),
-                                                InlineKeyboardButton("Short Link", url=share_link)]])
-        )
+        
+        # Log the batch creation in the log channel
+        if editable.reply_to_message and editable.reply_to_message.from_user:
+            user_name = editable.reply_to_message.from_user.first_name
+            user_id = editable.reply_to_message.from_user.id
+            await bot.send_message(
+                chat_id=int(Config.LOG_CHANNEL),
+                text=f"#BATCH_SAVE:\n\n[{user_name}](tg://user?id={user_id}) Got Batch Link!",
+                disable_web_page_preview=True,
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Original Link", url=short_link),
+                                                    InlineKeyboardButton("Short Link", url=share_link)]])
+            )
+        else:
+            # Log without user name if the message wasn't a reply
+            await bot.send_message(
+                chat_id=int(Config.LOG_CHANNEL),
+                text=f"#BATCH_SAVE: Batch Link Created without User Reply.",
+                disable_web_page_preview=True
+            )
     except Exception as err:
         await editable.edit(f"Something Went Wrong!\n\n**Error:** `{err}`")
         await bot.send_message(
@@ -125,8 +217,7 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, message_id
                 ]
             )
         )
-
-
+        
 async def save_media_in_channel(bot: Client, editable: Message, message: Message):
     try:
         forwarded_msg = await message.forward(Config.DB_CHANNEL)
