@@ -87,7 +87,7 @@ async def send_media_and_reply(bot: Client, user_id: int, file_ids: list):
 
     # Send all the files
     for file_id in file_ids:
-        sent_message = await media_forward(bot, user_id, file_id)
+        sent_message = await media_forward(bot, user_id, int(file_id))
         sent_messages.append(sent_message)
 
     for msg in sent_messages:
@@ -96,7 +96,7 @@ async def send_media_and_reply(bot: Client, user_id: int, file_ids: list):
     # await asyncio.gather(*[delete_after_delay(msg, 43200) for msg in sent_messages])
 
     # After all files are sent, send the final message
-    await reply_forward(sent_messages[-1])  # Use the last sent message to send the final message
+    await reply_forward(sent_messages[-1], int(file_ids[-1]))  # Use the last sent message to send the final message
 
 async def delete_after_delay(message, delay):
     await asyncio.sleep(delay)
