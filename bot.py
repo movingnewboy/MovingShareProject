@@ -413,13 +413,23 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
         )
         
         # Log the batch creation in the log channel
-        await bot.send_message(
-            chat_id=int(Config.LOG_CHANNEL),
-            text=f"#BATCH_SAVE:\n\n[{editable.reply_to_message.from_user.first_name}](tg://user?id={editable.reply_to_message.from_user.id}) Got Batch Link!",
-            disable_web_page_preview=True,
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Original Link", url=short_link),
-                                                InlineKeyboardButton("Short Link", url=share_link)]])
-        )
+        if editable.reply_to_message and editable.reply_to_message.from_user:
+            user_name = editable.reply_to_message.from_user.first_name
+            user_id = editable.reply_to_message.from_user.id
+            await bot.send_message(
+                chat_id=int(Config.LOG_CHANNEL),
+                text=f"#BATCH_SAVE:\n\n[{user_name}](tg://user?id={user_id}) Got Batch Link!",
+                disable_web_page_preview=True,
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Original Link", url=short_link),
+                                                    InlineKeyboardButton("Short Link", url=share_link)]])
+            )
+        else:
+            # Log without user name if the message wasn't a reply
+            await bot.send_message(
+                chat_id=int(Config.LOG_CHANNEL),
+                text=f"#BATCH_SAVE: Batch Link Created without User Reply.",
+                disable_web_page_preview=True
+            )
     except Exception as err:
         await editable.edit(f"Something Went Wrong!\n\n**Error:** `{err}`")
         await bot.send_message(
