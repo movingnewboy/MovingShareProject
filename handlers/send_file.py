@@ -76,25 +76,27 @@ async def media_forward(bot: Client, user_id: int, file_id: int):
         return media_forward(bot, user_id, file_id)
         await message.delete()
 
-async def send_media_and_reply(bot: Client, user_id: int, file_id: int):
-    sent_message = await media_forward(bot, user_id, file_id)
-    await reply_forward(message=sent_message, file_id=file_id)
-    asyncio.create_task(delete_after_delay(sent_message, 43200))
+# async def send_media_and_reply(bot: Client, user_id: int, file_id: int):
+#     sent_message = await media_forward(bot, user_id, file_id)
+#     await reply_forward(message=sent_message, file_id=file_id)
+#     asyncio.create_task(delete_after_delay(sent_message, 43200))
 
-# async def send_media_and_reply(bot: Client, user_id: int, file_ids: list):
-#     # Track the sent messages
-#     sent_messages = []
+async def send_media_and_reply(bot: Client, user_id: int, file_ids: list):
+    # Track the sent messages
+    sent_messages = []
 
-#     # Send all the files
-#     for file_id in file_ids:
-#         sent_message = await media_forward(bot, user_id, file_id)
-#         sent_messages.append(sent_message)
+    # Send all the files
+    for file_id in file_ids:
+        sent_message = await media_forward(bot, user_id, file_id)
+        sent_messages.append(sent_message)
 
-#     # Wait for all files to be sent before sending the final message
-#     await asyncio.gather(*[delete_after_delay(msg, 43200) for msg in sent_messages])
+    for msg in sent_messages:
+        asyncio.create_task(delete_after_delay(msg, 43200))
+    # Wait for all files to be sent before sending the final message
+    # await asyncio.gather(*[delete_after_delay(msg, 43200) for msg in sent_messages])
 
-#     # After all files are sent, send the final message
-#     await reply_forward(sent_messages[-1])  # Use the last sent message to send the final message
+    # After all files are sent, send the final message
+    await reply_forward(sent_messages[-1])  # Use the last sent message to send the final message
 
 async def delete_after_delay(message, delay):
     await asyncio.sleep(delay)
