@@ -39,7 +39,13 @@ from handlers.save_media import (
     save_batch_media_in_channel
 )
 
+# Dictionary to store media for users
 MediaList = {}
+# Dictionary to store the timestamp of when a user started sending files
+UserTimers = {}
+
+# The time window for accepting files is 5 seconds
+TIME_WINDOW = 5
 
 Bot = Client(
     name=Config.BOT_USERNAME,
@@ -128,13 +134,6 @@ async def start(bot: Client, cmd: Message):
         except Exception as err:
             await cmd.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
             
-# Dictionary to store media for users
-MediaList = {}
-# Dictionary to store the timestamp of when a user started sending files
-UserTimers = {}
-
-# The time window for accepting files is 5 seconds
-TIME_WINDOW = 5
 
 @Bot.on_message((filters.document | filters.video | filters.audio | filters.photo) & ~filters.chat(Config.DB_CHANNEL))
 async def main(bot: Client, message: Message):
