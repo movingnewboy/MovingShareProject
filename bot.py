@@ -1,8 +1,12 @@
 # (c) @TeleRoidGroup || @PredatorHackerzZ
 
+import requests
 import os
 import asyncio
 import traceback
+import time
+import string
+import random
 from binascii import (
     Error
 )
@@ -38,7 +42,15 @@ from handlers.save_media import (
     save_batch_media_in_channel
 )
 
+# Dictionary to store media for users
 MediaList = {}
+# Dictionary to store the timestamp of when a user started sending files
+UserTimers = {}
+
+# The time window for accepting files is 5 seconds
+TIME_WINDOW = 2
+token_start_time = None  # Token to track the batch start time
+TOKEN_EXPIRATION = 2  # Token expiration time in seconds
 
 Bot = Client(
     name=Config.BOT_USERNAME,
@@ -120,19 +132,19 @@ async def start(bot: Client, cmd: Message):
             file_data.sort(key=lambda x: x[0])
 
             # Send files in sorted order
-            for file_size, msg_id in file_data:
-                await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(msg_id))
-           # for i in range(len(message_ids)):
-             #   await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(message_ids[i]))
+            # for file_size, msg_id in file_data:
+            #     await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(msg_id))
+            await send_media_and_reply(bot, user_id=cmd.from_user.id, file_ids=message_ids)
         except Exception as err:
             await cmd.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
 
-
 @Bot.on_message((filters.document | filters.video | filters.audio | filters.photo) & ~filters.chat(Config.DB_CHANNEL))
 async def main(bot: Client, message: Message):
-
+    
+    global token_start_time
+    user_id = str(message.from_user.id)
     if message.chat.type == enums.ChatType.PRIVATE:
-
+        
         await add_user_to_database(bot, message)
 
         if Config.UPDATES_CHANNEL is not None:
@@ -148,15 +160,35 @@ async def main(bot: Client, message: Message):
         if Config.OTHER_USERS_CAN_SAVE_FILE is False:
             return
 
-        await message.reply_text(
-            text="**Choose an option from below:**",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("Save in Batch", callback_data="addToBatchTrue")],
-                [InlineKeyboardButton("Get Sharable Link", callback_data="addToBatchFalse")]
-            ]),
-            quote=True,
-            disable_web_page_preview=True
-        )
+        # Check if the user has a timer running
+        if user_id in UserTimers and time.time() - UserTimers[user_id] < TIME_WINDOW:
+            # User is within the 5-second window, add file to the batch
+            if MediaList.get(user_id) is None:
+                MediaList[user_id] = []
+            file_id = message.id  # Adjust based on the file type (document, photo, etc.)
+            MediaList[user_id].append(file_id)
+    
+        else:
+            # If it's a new batch, start a new timer
+            UserTimers[user_id] = time.time()
+            MediaList[user_id] = [message.id]  # Add the first file
+
+        current_time = time.time()
+        if token_start_time is None:  # First file, initialize the token
+            token_start_time = current_time
+
+        # Wait for 5 seconds, then generate the batch link
+        await asyncio.sleep(TOKEN_EXPIRATION)
+        message_ids = MediaList.get(f"{str(message.from_user.id)}", None)
+
+        # Check if the token has expired (no new files during the wait period)
+        if token_start_time is not None:  # Ensure no other files were added
+            token_start_time = None
+            await message.reply_text("Please wait, generating batch link ...", disable_web_page_preview=True)
+            # await save_batch_media_in_channel(bot, message, user_id)  # Generate the batch link
+            await save_batch_media_in_channel(bot=bot, editable=message, user_id=user_id, MediaList=MediaList)  # Generate the batch link
+            MediaList[user_id] = []  # Reset the token and clear the batch
+
     elif message.chat.type == enums.ChatType.CHANNEL:
         if (message.chat.id == int(Config.LOG_CHANNEL)) or (message.chat.id == int(Config.UPDATES_CHANNEL)) or message.forward_from_chat or message.forward_from:
             return
@@ -194,7 +226,7 @@ async def main(bot: Client, message: Message):
                 text=f"#ERROR_TRACEBACK:\nGot Error from `{str(message.chat.id)}` !!\n\n**Traceback:** `{err}`",
                 disable_web_page_preview=True
             )
-
+            
 # Function to send a message to all users
 async def broadcast_message(bot: Client, message: Message):
     all_users = await db.get_all_users()  # Fetch all user IDs from your database
