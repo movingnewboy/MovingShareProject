@@ -165,13 +165,13 @@ async def main(bot: Client, message: Message):
             MediaList[user_id].append(file_id)
     
             # Automatically generate batch link after 5 seconds
-            if time.time() - UserTimers[user_id] >= TIME_WINDOW:
-                message_ids = MediaList.get(f"{str(cmd.from_user.id)}", None)
-                if message_ids is None:
-                    await cmd.answer("Batch List Empty!", show_alert=True)
-                    return
-                await cmd.message.edit("Please wait, generating batch link ...")
-                await save_batch_media_in_channel(bot=bot, editable=cmd.message, message_ids=message_ids)
+            # if time.time() - UserTimers[user_id] >= TIME_WINDOW:
+            #     message_ids = MediaList.get(f"{str(cmd.from_user.id)}", None)
+            #     if message_ids is None:
+            #         await cmd.answer("Batch List Empty!", show_alert=True)
+            #         return
+                # await cmd.message.edit("Please wait, generating batch link ...")
+                # await save_batch_media_in_channel(bot=bot, editable=cmd.message, message_ids=message_ids)
                 # await save_batch_media_in_channel(bot, message, user_id)
         else:
             # If it's a new batch, start a new timer
@@ -182,6 +182,10 @@ async def main(bot: Client, message: Message):
             text="File has been added to your batch. If you'd like to get the batch link, it'll be sent shortly.",
             disable_web_page_preview=True
         )
+        message_ids = MediaList.get(f"{str(cmd.from_user.id)}", None)
+        await asyncio.sleep(TIME_WINDOW)
+        await cmd.message.edit("Please wait, generating batch link ...")
+        await save_batch_media_in_channel(bot, message, message_ids)
 
         # await message.reply_text(
         #     text="**Choose an option from below:**",
