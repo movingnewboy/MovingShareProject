@@ -187,7 +187,7 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
         #     disable_web_page_preview=True
         # )
 
-         await message.reply_tex(
+         await message.reply_text(
             text=(
                 f"**Batch Files Stored in my Database!**\n\nHere is the Permanent Link of your files: **Sorted Files by Size:**\n<code>{final_output}</code> \n\n"
                 f"**Short Link - ** <code>{short_link}</code> \n\n**Original Link - ** <code>{share_link}</code> \n\n"
