@@ -131,6 +131,7 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
         message_ids_str = ""
         file_sizes = []
         sent_messages = []
+        file_names = []
         
         # Get the messages by IDs stored in the MediaList for the user
         for message_id in MediaList.get(user_id, []):
@@ -140,17 +141,25 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
             if sent_message is None:
                 continue
             
-            # Check if the message contains a file and retrieve the size
+            # Check if the message contains a file and retrieve the size and name
             file_size = None
+            file_name = None
+            
             if message.document:
                 file_size = message.document.file_size
+                file_name = message.document.file_name
             elif message.video:
                 file_size = message.video.file_size
+                file_name = message.video.file_name if hasattr(message.video, "file_name") else "Video"
             elif message.audio:
                 file_size = message.audio.file_size
-            
+                file_name = message.audio.file_name if hasattr(message.audio, "file_name") else "Audio"
+
+            # Store the file sizes and names
             if file_size is not None:
                 file_sizes.append(file_size)
+            if file_name is not None:
+                file_names.append(file_name)
             message_ids_str += f"{str(sent_message.id)} "
             await asyncio.sleep(2)
 
@@ -159,27 +168,42 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
             chat_id=Config.DB_CHANNEL,
             text=message_ids_str,
             disable_web_page_preview=True,
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("Delete Batch", callback_data="closeMessage")
-            ]])
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Delete Batch", callback_data="closeMessage")]])
         )
 
         # Generate the links
         share_link = f"https://telegram.me/{Config.BOT_USERNAME}?start=Tamilan_{str_to_b64(str(SaveMessage.id))}"
         short_link = get_short(share_link)
 
-        # Prepare the output text with file sizes and links
-        output_lines = [f"{humanbytes(size)} - {short_link}" for size in file_sizes]
-        final_output = "\n\n".join(output_lines)
+        # Check for similar file names
+        are_similar = False
+        if len(file_names) > 1:
+            base_names = [name[:25] for name in file_names]  # Take the first 25 letters of each file name
+            are_similar = len(set(base_names)) == 1  # Check if all base names are identical
+
+        # Prepare the output based on file name similarity
+        if are_similar:
+            # If file names are similar, display sorted file sizes
+            output_lines = [f"{humanbytes(size)} - {short_link}" for size in file_sizes]
+            final_output = "\n\n".join(output_lines)
+            text = (
+                f"**Batch Files Stored in my Database!**\n\nHere is the Permanent Link of your files: **Sorted Files by Size:**\n<code>{final_output}</code> \n\n"
+                f"**Short Link - ** <code>{short_link}</code> \n\n**Original Link - ** <code>{share_link}</code> \n\n"
+                f"Just Click the link to get your files!"
+            )
+        else:
+            # If file names are different, combine them into a list
+            file_list = "\n".join([f"👉 {name}" for name in file_names])
+            text = (
+                f"**Batch Files Stored in my Database!**\n\nHere are your files:\n{file_list}\n\n"
+                f"✅ All in one Link - <code>{short_link}</code>\n\n"
+                f"Just Click the link to get your files!"
+            )
 
         # Send the final message to the user with links
         await bot.send_message(
             chat_id=editable.chat.id,
-            text=(
-                f"**Batch Files Stored in my Database!**\n\nHere is the Permanent Link of your files: **Sorted Files by Size:**\n<code>{final_output}</code> \n\n"
-                f"**Short Link - ** <code>{short_link}</code> \n\n**Original Link - ** <code>{share_link}</code> \n\n"
-                f"Just Click the link to get your files!"
-            ),
+            text=text,
             reply_markup=InlineKeyboardMarkup(
                 [[InlineKeyboardButton("Original Link", url=share_link),
                   InlineKeyboardButton("Short Link", url=short_link)]]
