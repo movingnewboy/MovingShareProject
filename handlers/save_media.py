@@ -147,7 +147,7 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
             
             if message.document:
                 file_size = message.document.file_size
-                file_name = message.document.file_name if hasattr(message.document, "file_name"): else "Document"
+                file_name = message.document.file_name if hasattr(message.document, "file_name") else "Document"
             elif message.video:
                 file_size = message.video.file_size
                 file_name = message.video.file_name if hasattr(message.video, "file_name") else "Video"
