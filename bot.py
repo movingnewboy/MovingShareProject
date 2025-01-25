@@ -49,6 +49,8 @@ UserTimers = {}
 
 # The time window for accepting files is 5 seconds
 TIME_WINDOW = 5
+token_start_time = None  # Token to track the batch start time
+TOKEN_EXPIRATION = 4  # Token expiration time in seconds
 
 Bot = Client(
     name=Config.BOT_USERNAME,
@@ -209,10 +211,11 @@ async def batch(client: Client, message: Message):
 
 @Bot.on_message((filters.document | filters.video | filters.audio | filters.photo) & ~filters.chat(Config.DB_CHANNEL))
 async def main(bot: Client, message: Message):
-
+    
+    global token_start_time
     user_id = str(message.from_user.id)
     if message.chat.type == enums.ChatType.PRIVATE:
-
+        
         await add_user_to_database(bot, message)
 
         if Config.UPDATES_CHANNEL is not None:
@@ -240,30 +243,31 @@ async def main(bot: Client, message: Message):
             # If it's a new batch, start a new timer
             UserTimers[user_id] = time.time()
             MediaList[user_id] = [message.id]  # Add the first file
-    
-        await message.reply_text(
-            text="File has been added to your batch. If you'd like to get the batch link, it'll be sent shortly.",
-            disable_web_page_preview=True
-        )
-        message_ids = MediaList.get(f"{str(message.from_user.id)}", None)
+
+        current_time = time.time()
+        if token_start_time is None:  # First file, initialize the token
+            token_start_time = current_time
+
         # Wait for 5 seconds, then generate the batch link
-        await asyncio.sleep(TIME_WINDOW)
+        await asyncio.sleep(TOKEN_EXPIRATION)
+        message_ids = MediaList.get(f"{str(message.from_user.id)}", None)
 
-        await message.reply_text("Please wait, generating batch link ...", disable_web_page_preview=True)
-        # Now that 5 seconds have passed, generate the batch link
-        if user_id in MediaList and MediaList[user_id]:
+        # Check if the token has expired (no new files during the wait period)
+        if current_time == token_start_time:  # Ensure no other files were added
+            # Generate the batch link
+            await message.reply_text("Please wait, generating batch link ...", disable_web_page_preview=True)
             await save_batch_media_in_channel(bot, message, user_id)
-            MediaList[user_id] = []  # Clear the batch after saving and generating the link
+    
+            # Reset the token and clear the batch
+            token_start_time = None
+            MediaList[user_id] = []
+        
+        
+        # # Now that 5 seconds have passed, generate the batch link
+        # if user_id in MediaList and MediaList[user_id]:
+        #     await save_batch_media_in_channel(bot, message, user_id)
+        #     MediaList[user_id] = []  # Clear the batch after saving and generating the link
 
-        # await message.reply_text(
-        #     text="**Choose an option from below:**",
-        #     reply_markup=InlineKeyboardMarkup([
-        #         [InlineKeyboardButton("Save in Batch", callback_data="addToBatchTrue")],
-        #         [InlineKeyboardButton("Get Sharable Link", callback_data="addToBatchFalse")]
-        #     ]),
-        #     quote=True,
-        #     disable_web_page_preview=True
-        # )
     elif message.chat.type == enums.ChatType.CHANNEL:
         if (message.chat.id == int(Config.LOG_CHANNEL)) or (message.chat.id == int(Config.UPDATES_CHANNEL)) or message.forward_from_chat or message.forward_from:
             return
