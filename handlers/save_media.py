@@ -126,7 +126,7 @@ async def forward_to_channel(bot: Client, message: Message, editable: Message):
 #             )
 #         )
 
-async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: str):
+async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: str, MediaList: dict):
     try:
         message_ids_str = ""
         file_sizes = []
