@@ -131,7 +131,7 @@ async def start(bot: Client, cmd: Message):
             # Sort the files by size (ascending order)
             file_data.sort(key=lambda x: x[0])
 
-            Send files in sorted order
+            # Send files in sorted order
             for file_size, msg_id in file_data:
                 await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(msg_id))
             # await send_media_and_reply(bot, user_id=cmd.from_user.id, file_ids=message_ids)
