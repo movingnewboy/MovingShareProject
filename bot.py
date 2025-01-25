@@ -132,10 +132,9 @@ async def start(bot: Client, cmd: Message):
             file_data.sort(key=lambda x: x[0])
 
             # Send files in sorted order
-            for file_size, msg_id in file_data:
-                await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(msg_id))
-           # for i in range(len(message_ids)):
-             #   await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(message_ids[i]))
+            # for file_size, msg_id in file_data:
+            #     await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(msg_id))
+            await send_media_and_reply(bot, user_id=cmd.from_user.id, message_ids)
         except Exception as err:
             await cmd.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
 
