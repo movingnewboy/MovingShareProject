@@ -173,7 +173,7 @@ async def main(bot: Client, message: Message):
             text="File has been added to your batch. If you'd like to get the batch link, it'll be sent shortly.",
             disable_web_page_preview=True
         )
-        message_ids = MediaList.get(f"{str(cmd.from_user.id)}", None)
+        message_ids = MediaList.get(f"{str(message.from_user.id)}", None)
         # Wait for 5 seconds, then generate the batch link
         await asyncio.sleep(TIME_WINDOW)
 
