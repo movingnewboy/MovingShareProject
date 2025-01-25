@@ -136,7 +136,76 @@ async def start(bot: Client, cmd: Message):
              #   await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(message_ids[i]))
         except Exception as err:
             await cmd.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
-            
+
+async def get_message_id(client, message):
+    if message.forward_from_chat:
+        if message.forward_from_chat.id == client.db_channel.id:
+            return message.forward_from_message_id
+        else:
+            return 0
+    elif message.forward_sender_name:
+        return 0
+    elif message.text:
+        pattern = "https://t.me/(?:c/)?(.*)/(\d+)"
+        matches = re.match(pattern,message.text)
+        if not matches:
+            return 0
+        channel_id = matches.group(1)
+        msg_id = int(matches.group(2))
+        if channel_id.isdigit():
+            if f"-100{channel_id}" == str(client.db_channel.id):
+                return msg_id
+        else:
+            if channel_id == client.db_channel.username:
+                return msg_id
+    else:
+        return 0
+
+async def encode(string):
+    string_bytes = string.encode("ascii")
+    base64_bytes = base64.urlsafe_b64encode(string_bytes)
+    base64_string = (base64_bytes.decode("ascii")).strip("=")
+    return base64_string
+
+async def decode(base64_string):
+    base64_string = base64_string.strip("=") # links generated before this commit will be having = sign, hence striping them to handle padding errors.
+    base64_bytes = (base64_string + "=" * (-len(base64_string) % 4)).encode("ascii")
+    string_bytes = base64.urlsafe_b64decode(base64_bytes) 
+    string = string_bytes.decode("ascii")
+    return string
+    
+@Bot.on_message(filters.private & filters.user(ADMINS) & filters.command('batch'))
+async def batch(client: Client, message: Message):
+    while True:
+        try:
+            first_message = await client.ask(text = "Forward the First Message from DB Channel (with Quotes)..\n\nor Send the DB Channel Post Link", chat_id = message.from_user.id, filters=(filters.forwarded | (filters.text & ~filters.forwarded)), timeout=60)
+        except:
+            return
+        f_msg_id = await get_message_id(client, first_message)
+        if f_msg_id:
+            break
+        else:
+            await first_message.reply("❌ Error\n\nthis Forwarded Post is not from my DB Channel or this Link is taken from DB Channel", quote = True)
+            continue
+
+    while True:
+        try:
+            second_message = await client.ask(text = "Forward the Last Message from DB Channel (with Quotes)..\nor Send the DB Channel Post link", chat_id = message.from_user.id, filters=(filters.forwarded | (filters.text & ~filters.forwarded)), timeout=60)
+        except:
+            return
+        s_msg_id = await get_message_id(client, second_message)
+        if s_msg_id:
+            break
+        else:
+            await second_message.reply("❌ Error\n\nthis Forwarded Post is not from my DB Channel or this Link is taken from DB Channel", quote = True)
+            continue
+
+
+    string = f"get-{f_msg_id * abs(client.db_channel.id)}-{s_msg_id * abs(client.db_channel.id)}"
+    base64_string = await encode(string)
+    link = f"https://t.me/{client.username}?start={base64_string}"
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
+    await second_message.reply_text(f"<b>Here is your link</b>\n\n{link}", quote=True, reply_markup=reply_markup)
 
 @Bot.on_message((filters.document | filters.video | filters.audio | filters.photo) & ~filters.chat(Config.DB_CHANNEL))
 async def main(bot: Client, message: Message):
