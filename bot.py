@@ -176,7 +176,7 @@ async def decode(base64_string):
     string = string_bytes.decode("ascii")
     return string
     
-@Bot.on_message(filters.private & filters.user(ADMINS) & filters.command('batch'))
+@Bot.on_message(filters.private & filters.command('batch'))
 async def batch(client: Client, message: Message):
     while True:
         try:
