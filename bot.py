@@ -164,15 +164,6 @@ async def main(bot: Client, message: Message):
             file_id = message.id  # Adjust based on the file type (document, photo, etc.)
             MediaList[user_id].append(file_id)
     
-            # Automatically generate batch link after 5 seconds
-            # if time.time() - UserTimers[user_id] >= TIME_WINDOW:
-            #     message_ids = MediaList.get(f"{str(cmd.from_user.id)}", None)
-            #     if message_ids is None:
-            #         await cmd.answer("Batch List Empty!", show_alert=True)
-            #         return
-                # await cmd.message.edit("Please wait, generating batch link ...")
-                # await save_batch_media_in_channel(bot=bot, editable=cmd.message, message_ids=message_ids)
-                # await save_batch_media_in_channel(bot, message, user_id)
         else:
             # If it's a new batch, start a new timer
             UserTimers[user_id] = time.time()
@@ -183,9 +174,14 @@ async def main(bot: Client, message: Message):
             disable_web_page_preview=True
         )
         message_ids = MediaList.get(f"{str(cmd.from_user.id)}", None)
+        # Wait for 5 seconds, then generate the batch link
         await asyncio.sleep(TIME_WINDOW)
-        await cmd.message.edit("Please wait, generating batch link ...")
-        await save_batch_media_in_channel(bot, message, message_ids)
+
+        await message.reply_text("Please wait, generating batch link ...", disable_web_page_preview=True)
+        # Now that 5 seconds have passed, generate the batch link
+        if user_id in MediaList and MediaList[user_id]:
+            await save_batch_media_in_channel(bot, message, user_id)
+            MediaList[user_id] = []  # Clear the batch after saving and generating the link
 
         # await message.reply_text(
         #     text="**Choose an option from below:**",
