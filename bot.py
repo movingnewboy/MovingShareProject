@@ -3,6 +3,7 @@
 import os
 import asyncio
 import traceback
+import time
 from binascii import (
     Error
 )
@@ -126,11 +127,19 @@ async def start(bot: Client, cmd: Message):
              #   await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(message_ids[i]))
         except Exception as err:
             await cmd.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
+            
+# Dictionary to store media for users
+MediaList = {}
+# Dictionary to store the timestamp of when a user started sending files
+UserTimers = {}
 
+# The time window for accepting files is 5 seconds
+TIME_WINDOW = 5
 
 @Bot.on_message((filters.document | filters.video | filters.audio | filters.photo) & ~filters.chat(Config.DB_CHANNEL))
 async def main(bot: Client, message: Message):
 
+    user_id = str(message.from_user.id)
     if message.chat.type == enums.ChatType.PRIVATE:
 
         await add_user_to_database(bot, message)
@@ -148,15 +157,42 @@ async def main(bot: Client, message: Message):
         if Config.OTHER_USERS_CAN_SAVE_FILE is False:
             return
 
+        # Check if the user has a timer running
+        if user_id in UserTimers and time.time() - UserTimers[user_id] < TIME_WINDOW:
+            # User is within the 5-second window, add file to the batch
+            if MediaList.get(user_id) is None:
+                MediaList[user_id] = []
+            file_id = message.id  # Adjust based on the file type (document, photo, etc.)
+            MediaList[user_id].append(file_id)
+    
+            # Automatically generate batch link after 5 seconds
+            if time.time() - UserTimers[user_id] >= TIME_WINDOW:
+                message_ids = MediaList.get(f"{str(cmd.from_user.id)}", None)
+                if message_ids is None:
+                    await cmd.answer("Batch List Empty!", show_alert=True)
+                    return
+                await cmd.message.edit("Please wait, generating batch link ...")
+                await save_batch_media_in_channel(bot=bot, editable=cmd.message, message_ids=message_ids)
+                # await save_batch_media_in_channel(bot, message, user_id)
+        else:
+            # If it's a new batch, start a new timer
+            UserTimers[user_id] = time.time()
+            MediaList[user_id] = [message.id]  # Add the first file
+    
         await message.reply_text(
-            text="**Choose an option from below:**",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("Save in Batch", callback_data="addToBatchTrue")],
-                [InlineKeyboardButton("Get Sharable Link", callback_data="addToBatchFalse")]
-            ]),
-            quote=True,
+            text="File has been added to your batch. If you'd like to get the batch link, it'll be sent shortly.",
             disable_web_page_preview=True
         )
+
+        # await message.reply_text(
+        #     text="**Choose an option from below:**",
+        #     reply_markup=InlineKeyboardMarkup([
+        #         [InlineKeyboardButton("Save in Batch", callback_data="addToBatchTrue")],
+        #         [InlineKeyboardButton("Get Sharable Link", callback_data="addToBatchFalse")]
+        #     ]),
+        #     quote=True,
+        #     disable_web_page_preview=True
+        # )
     elif message.chat.type == enums.ChatType.CHANNEL:
         if (message.chat.id == int(Config.LOG_CHANNEL)) or (message.chat.id == int(Config.UPDATES_CHANNEL)) or message.forward_from_chat or message.forward_from:
             return
