@@ -186,7 +186,7 @@ async def main(bot: Client, message: Message):
             token_start_time = None
             await message.reply_text("Please wait, generating batch link ...", disable_web_page_preview=True)
             # await save_batch_media_in_channel(bot, message, user_id)  # Generate the batch link
-            await save_batch_media_in_channel(bot=bot, message, user_id)  # Generate the batch link
+            await save_batch_media_in_channel(bot=bot, editable=message, user_id=user_id, MediaList=MediaList)  # Generate the batch link
             MediaList[user_id] = []  # Reset the token and clear the batch
 
     elif message.chat.type == enums.ChatType.CHANNEL:
