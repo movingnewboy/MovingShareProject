@@ -231,6 +231,24 @@ async def main(bot: Client, message: Message):
                 disable_web_page_preview=True
             )
 
+async def forward_to_channel(bot: Client, message: Message, editable: Message):
+    try:
+        # Forward the message to the DB_CHANNEL
+        __SENT = await message.forward(Config.DB_CHANNEL)
+        return __SENT
+    except FloodWait as sl:
+        if sl.value > 45:
+            await asyncio.sleep(sl.value)
+            await bot.send_message(
+                chat_id=int(Config.LOG_CHANNEL),
+                text=f"#FloodWait:\nGot FloodWait of `{str(sl.value)}s` from `{str(editable.chat.id)}` !!",
+                disable_web_page_preview=True,
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("Ban User", callback_data=f"ban_user_{str(editable.chat.id)}")]]
+                )
+            )
+        return await forward_to_channel(bot, message, editable)
+        
 async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: str):
     try:
         message_ids_str = ""
