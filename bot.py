@@ -326,8 +326,12 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
 
         # Send the final message to the user with links
         await bot.send_message(
-            f"**Batch Files Stored in my Database!**\n\nHere is the Permanent Link of your files: **Sorted Files by Size:**\n<code>{final_output}</code> \n\n**Short Link - ** <code>{short_link}</code> \n\n**Original Link - ** <code>{share_link}</code> \n\n"
-            f"Just Click the link to get your files!",
+            chat_id=editable.chat.id,
+            text=(
+                f"**Batch Files Stored in my Database!**\n\nHere is the Permanent Link of your files: **Sorted Files by Size:**\n<code>{final_output}</code> \n\n"
+                f"**Short Link - ** <code>{short_link}</code> \n\n**Original Link - ** <code>{share_link}</code> \n\n"
+                f"Just Click the link to get your files!"
+            ),
             reply_markup=InlineKeyboardMarkup(
                 [[InlineKeyboardButton("Original Link", url=share_link),
                   InlineKeyboardButton("Short Link", url=short_link)]]
