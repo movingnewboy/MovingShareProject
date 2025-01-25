@@ -50,7 +50,7 @@ UserTimers = {}
 # The time window for accepting files is 5 seconds
 TIME_WINDOW = 5
 token_start_time = None  # Token to track the batch start time
-TOKEN_EXPIRATION = 4  # Token expiration time in seconds
+TOKEN_EXPIRATION = 2  # Token expiration time in seconds
 
 Bot = Client(
     name=Config.BOT_USERNAME,
@@ -253,7 +253,7 @@ async def main(bot: Client, message: Message):
         message_ids = MediaList.get(f"{str(message.from_user.id)}", None)
 
         # Check if the token has expired (no new files during the wait period)
-        if current_time == token_start_time:  # Ensure no other files were added
+        if token_start_time is not None:  # Ensure no other files were added
             # Generate the batch link
             await message.reply_text("Please wait, generating batch link ...", disable_web_page_preview=True)
             await save_batch_media_in_channel(bot, message, user_id)
