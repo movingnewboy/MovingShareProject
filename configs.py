@@ -15,6 +15,9 @@ class Config(object):
   SHORTLINK_API = os.environ.get('SHORTLINK_API', "0f7f8b24825560cc57765f8fcc04b9aafacf8c43")
   BOT_OWNER = int(os.environ.get("BOT_OWNER", "807374433"))
   DATABASE_URL = os.environ.get("DATABASE_URL", "mongodb+srv://leecher:leecher@cluster0.606mkpi.mongodb.net/?retryWrites=true&w=majority")
+
+  #Force sub message 
+  FORCE_MSG = os.environ.get("FORCE_SUB_MESSAGE", "Hello {first}\n\n<b>You need to join in my Channel/Group to use me\n\nKindly Please join Channel</b>")
   
   BANNED_USERS = set(int(x) for x in os.environ.get("BANNED_USERS", "").split())
   FORWARD_AS_COPY = bool(os.environ.get("FORWARD_AS_COPY", True))
