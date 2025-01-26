@@ -118,7 +118,7 @@ async def not_joined(client: Client, message: Message):
     #         creates_join_request=True
     #     )
     
-    invite_link = await get_invite_link(client, chat_id=channel_chat_id)
+    # invite_link = await get_invite_link(client, chat_id=channel_chat_id)
     
     # invite_link = await client.create_chat_invite_link(chat_id=chat_id)
     # await client.send_message(
@@ -136,23 +136,23 @@ async def not_joined(client: Client, message: Message):
     #             ]
     #         )
     #     )
-    await message.reply(
-        text="**Please Join My Updates Channel to use this Bot!**\n\n"
-                 "Due to Overload, Only Channel Subscribers can use this Bot!",
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton("🤖 Join Updates Channel", url=invite_link.invite_link)
-                ],
-                [
-                    InlineKeyboardButton(text = 'Try Again',
-                    url = f"https://t.me/{Config.BOT_USERNAME}?start={message.command[1]}")
-                ]
-            ]
-        ),
-        quote = True,
-        disable_web_page_preview = True
-    )
+    # await message.reply(
+    #     text="**Please Join My Updates Channel to use this Bot!**\n\n"
+    #              "Due to Overload, Only Channel Subscribers can use this Bot!",
+    #     reply_markup=InlineKeyboardMarkup(
+    #         [
+    #             [
+    #                 InlineKeyboardButton("🤖 Join Updates Channel", url=invite_link.invite_link)
+    #             ],
+    #             [
+    #                 InlineKeyboardButton(text = 'Try Again',
+    #                 url = f"https://t.me/{Config.BOT_USERNAME}?start={message.command[1]}")
+    #             ]
+    #         ]
+    #     ),
+    #     quote = True,
+    #     disable_web_page_preview = True
+    # )
 
 @Bot.on_message(filters.command("start") & filters.private & subscribed)
 async def start(bot: Client, cmd: Message):
