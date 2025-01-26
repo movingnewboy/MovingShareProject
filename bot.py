@@ -96,14 +96,13 @@ async def not_joined(client: Client, message: Message):
                     InlineKeyboardButton("🤖 Join Updates Channel", url=invite_link.invite_link)
                 ],
                 [
-                    InlineKeyboardButton("🔄 Refresh 🔄", callback_data="refreshForceSub")
+                    InlineKeyboardButton(text = "🔄 Refresh 🔄", url = f"https://t.me/{client.username}?start={message.command[1]}")
                 ]
             ]
         )
         quote = True,
         disable_web_page_preview = True
     )
-
 
 @Bot.on_message(filters.command("start") & filters.private & subscribed)
 async def start(bot: Client, cmd: Message):
