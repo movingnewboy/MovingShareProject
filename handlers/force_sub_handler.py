@@ -3,6 +3,7 @@ from typing import (
     Union
 )
 from configs import Config
+from pyrogram import filters
 from pyrogram import Client
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import FloodWait, UserNotParticipant
