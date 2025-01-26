@@ -70,8 +70,15 @@ async def _(bot: Client, cmd: Message):
 async def not_joined(client: Client, message: Message):
 
     channel_chat_id = int(Config.UPDATES_CHANNEL)
-    # invite_link = await get_invite_link(client, chat_id=channel_chat_id)
-    invite_link = await client.create_chat_invite_link(chat_id=chat_id)
+    
+    # invite = await client.create_chat_invite_link(
+    #         chat_id=FORCE_SUB_CHANNEL,
+    #         creates_join_request=True
+    #     )
+    
+    invite_link = await get_invite_link(client, chat_id=channel_chat_id)
+    
+    # invite_link = await client.create_chat_invite_link(chat_id=chat_id)
     # await client.send_message(
     #         chat_id=cmd.from_user.id,
     #         text="**Please Join My Updates Channel to use this Bot!**\n\n"
