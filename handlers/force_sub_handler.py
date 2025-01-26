@@ -4,6 +4,7 @@ from typing import (
 )
 from configs import Config
 from pyrogram import Client
+from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import FloodWait, UserNotParticipant
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
@@ -65,3 +66,21 @@ async def handle_force_sub(bot: Client, cmd: Message):
         )
         return 200
     return 200
+
+async def is_subscribed(filter, client, update):
+    if not Config.UPDATES_CHANNEL:
+        return True
+    user_id = update.from_user.id
+    if user_id in Config.BOT_OWNER:
+        return True
+    try:
+        member = await client.get_chat_member(chat_id = Config.UPDATES_CHANNEL, user_id = user_id)
+    except UserNotParticipant:
+        return False
+
+    if not member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
+        return False
+    else:
+        return True
+
+subscribed = filters.create(is_subscribed)
