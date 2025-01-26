@@ -34,7 +34,8 @@ from handlers.helpers import b64_to_str, str_to_b64
 from handlers.check_user_status import handle_user_status
 from handlers.force_sub_handler import (
     handle_force_sub,
-    get_invite_link
+    get_invite_link,
+    subscribed
 )
 from handlers.broadcast_handlers import main_broadcast_handler
 from handlers.save_media import (
@@ -65,17 +66,56 @@ Bot = Client(
 async def _(bot: Client, cmd: Message):
     await handle_user_status(bot, cmd)
 
+@Bot.on_message(filters.command('start') & filters.private)
+async def not_joined(client: Client, message: Message):
 
-@Bot.on_message(filters.command("start") & filters.private)
+    channel_chat_id = int(Config.UPDATES_CHANNEL)
+    # invite_link = await get_invite_link(client, chat_id=channel_chat_id)
+    invite_link = await client.create_chat_invite_link(chat_id=chat_id)
+    # await client.send_message(
+    #         chat_id=cmd.from_user.id,
+    #         text="**Please Join My Updates Channel to use this Bot!**\n\n"
+    #              "Due to Overload, Only Channel Subscribers can use this Bot!",
+    #         reply_markup=InlineKeyboardMarkup(
+    #             [
+    #                 [
+    #                     InlineKeyboardButton("🤖 Join Updates Channel", url=invite_link.invite_link)
+    #                 ],
+    #                 [
+    #                     InlineKeyboardButton("🔄 Refresh 🔄", callback_data="refreshForceSub")
+    #                 ]
+    #             ]
+    #         )
+    #     )
+    await message.reply(
+        text="**Please Join My Updates Channel to use this Bot!**\n\n"
+                 "Due to Overload, Only Channel Subscribers can use this Bot!",
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton("🤖 Join Updates Channel", url=invite_link.invite_link)
+                ],
+                [
+                    InlineKeyboardButton("🔄 Refresh 🔄", callback_data="refreshForceSub")
+                ]
+            ]
+        )
+        quote = True,
+        disable_web_page_preview = True
+    )
+
+
+@Bot.on_message(filters.command("start") & filters.private & subscribed)
 async def start(bot: Client, cmd: Message):
 
     if cmd.from_user.id in Config.BANNED_USERS:
         await cmd.reply_text("Sorry, You are banned.")
         return
     if Config.UPDATES_CHANNEL is not None:
-        back = await handle_force_sub(bot, cmd)
-        if back == 400:
-            return
+        return
+        # back = await handle_force_sub(bot, cmd)
+        # if back == 400:
+        #     return
     
     usr_cmd = cmd.text.split("_", 1)[-1]
     if usr_cmd == "/start":
@@ -151,9 +191,10 @@ async def main(bot: Client, message: Message):
         await add_user_to_database(bot, message)
 
         if Config.UPDATES_CHANNEL is not None:
-            back = await handle_force_sub(bot, message)
-            if back == 400:
-                return
+            return
+            # back = await handle_force_sub(bot, message)
+            # if back == 400:
+            #     return
 
         if message.from_user.id in Config.BANNED_USERS:
             await message.reply_text("Sorry, You are banned!\n\nContact [𝙎𝙪𝙥𝙥𝙤𝙧𝙩 𝙂𝙧𝙤𝙪𝙥](https://t.me/Quality_LinksZ)",
