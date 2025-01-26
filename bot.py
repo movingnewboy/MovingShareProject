@@ -66,7 +66,7 @@ Bot = Client(
 async def _(bot: Client, cmd: Message):
     await handle_user_status(bot, cmd)
 
-@Bot.on_message(filters.command('start') & filters.private)
+''' @Bot.on_message(filters.command('start') & filters.private)
 async def not_joined(client: Client, message: Message):
 
     if True:
@@ -109,7 +109,7 @@ async def not_joined(client: Client, message: Message):
         reply_markup = InlineKeyboardMarkup(buttons),
         quote = True,
         disable_web_page_preview = True
-    )
+    ) '''
     
     # channel_chat_id = int(Config.UPDATES_CHANNEL)
 
@@ -162,9 +162,9 @@ async def start(bot: Client, cmd: Message):
         return
     if Config.UPDATES_CHANNEL is not None:
         return
-        # back = await handle_force_sub(bot, cmd)
-        # if back == 400:
-        #     return
+        back = await handle_force_sub(bot, cmd)
+        if back == 400:
+            return
     
     usr_cmd = cmd.text.split("_", 1)[-1]
     if usr_cmd == "/start":
@@ -241,9 +241,9 @@ async def main(bot: Client, message: Message):
 
         if Config.UPDATES_CHANNEL is not None:
             return
-            # back = await handle_force_sub(bot, message)
-            # if back == 400:
-            #     return
+            back = await handle_force_sub(bot, message)
+            if back == 400:
+                return
 
         if message.from_user.id in Config.BANNED_USERS:
             await message.reply_text("Sorry, You are banned!\n\nContact [𝙎𝙪𝙥𝙥𝙤𝙧𝙩 𝙂𝙧𝙤𝙪𝙥](https://t.me/Quality_LinksZ)",
