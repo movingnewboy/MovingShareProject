@@ -483,7 +483,8 @@ async def button(bot: Client, cmd: CallbackQuery):
                     )
                     return
             except UserNotParticipant:
-                invite_link = await get_invite_link(channel_chat_id)
+                # invite_link = await get_invite_link(channel_chat_id) # was giving error
+                invite_link = await get_invite_link(bot=bot, chat_id=channel_chat_id)
                 await cmd.message.edit(
                     text="**I like Your Smartness But Don't Be Oversmart! 😑**\n\n",
                     reply_markup=InlineKeyboardMarkup(
