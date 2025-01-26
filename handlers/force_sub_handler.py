@@ -34,6 +34,7 @@ async def handle_force_sub(bot: Client, cmd: Message):
                 disable_web_page_preview=True
             )
             return 400
+        return 200
     except UserNotParticipant:
         try:
             invite_link = await get_invite_link(bot, chat_id=channel_chat_id)
