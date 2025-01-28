@@ -48,9 +48,9 @@ MediaList = {}
 UserTimers = {}
 
 # The time window for accepting files is 5 seconds
-TIME_WINDOW = 2
+TIME_WINDOW = 4
 token_start_time = None  # Token to track the batch start time
-TOKEN_EXPIRATION = 2  # Token expiration time in seconds
+TOKEN_EXPIRATION = 4  # Token expiration time in seconds
 
 Bot = Client(
     name=Config.BOT_USERNAME,
