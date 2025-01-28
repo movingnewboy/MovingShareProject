@@ -68,7 +68,7 @@ async def handle_force_sub(bot: Client, cmd: Message):
         return 200
     return 200
 
-async def is_subscribed(filter, client, update):
+''' async def is_subscribed(filter, client, update):
     if not Config.UPDATES_CHANNEL:
         return True
     user_id = update.from_user.id
@@ -84,4 +84,4 @@ async def is_subscribed(filter, client, update):
     else:
         return True
 
-subscribed = filters.create(is_subscribed)
+subscribed = filters.create(is_subscribed) '''
