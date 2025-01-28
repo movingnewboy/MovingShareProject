@@ -154,7 +154,7 @@ async def not_joined(client: Client, message: Message):
     #     disable_web_page_preview = True
     # )
 
-@Bot.on_message(filters.command("start") & filters.private & subscribed)
+@Bot.on_message(filters.command("start") & filters.private)
 async def start(bot: Client, cmd: Message):
 
     if cmd.from_user.id in Config.BANNED_USERS:
