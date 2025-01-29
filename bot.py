@@ -49,9 +49,9 @@ UserTimers = {}
 UserTasks = {}  # Tracks active batch tasks per user
 
 # The time window for accepting files is 5 seconds
-TIME_WINDOW = 6
+TIME_WINDOW = 3
 token_start_time = {}  # Token to track the batch start time
-TOKEN_EXPIRATION = 5  # Token expiration time in seconds
+TOKEN_EXPIRATION = 3  # Token expiration time in seconds
 batch_locks = {}  # Dictionary of asyncio.Lock for each user
 
 Bot = Client(
