@@ -132,6 +132,15 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
         file_sizes = []
         sent_messages = []
         file_names = []
+
+        # Define media types and their send methods
+        media_types = {
+            "document": bot.send_document,
+            "photo": bot.send_photo,
+            "video": bot.send_video,
+            "audio": bot.send_audio,
+            "animation": bot.send_animation,
+        }
         
         # Get the messages by IDs stored in the MediaList for the user
         for message_id in MediaList.get(user_id, []):
@@ -144,18 +153,22 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
             # Check if the message contains a file and retrieve the size
             file_size = None
             file_name = None
+
+            caption = message.caption
+            file_name = caption.strip().split("\n")[0]
+            
             if message.document:
                 media = getattr(message, "document", None)
                 file_size = message.document.file_size
-                file_name = media.file_name
+                # file_name = media.file_name
             elif message.video:
                 media = getattr(message, "video", None)
                 file_size = message.video.file_size
-                file_name = media.file_name
+                # file_name = media.file_name
             elif message.audio:
                 media = getattr(message, "audio", None)
                 file_size = message.audio.file_size
-                file_name = media.file_name
+                # file_name = media.file_name
             
             if file_size is not None:
                 file_sizes.append(file_size)
