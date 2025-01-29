@@ -175,7 +175,7 @@ async def main(bot: Client, message: Message):
             
         # Schedule new batch processing task
         UserTasks[user_id] = asyncio.create_task(
-            process_batch(bot, message, user_id)
+            process_batch_after_timeout(bot, message, user_id)
         )
 
     elif message.chat.type == enums.ChatType.CHANNEL:
@@ -216,13 +216,17 @@ async def main(bot: Client, message: Message):
                 disable_web_page_preview=True
             )
 
-async def process_batch(bot: Client, message: Message, user_id: str):
-    # Wait for expiration period after last file
+async def process_batch_after_timeout(bot: Client, message: Message, user_id: str):
+    # Wait for expiration period after first file
     await asyncio.sleep(TOKEN_EXPIRATION)
     
+    # Process the batch only if MediaList[user_id] is not empty
+    if MediaList.get(user_id):
+        await process_batch(bot, message, user_id)
+
+async def process_batch(bot: Client, message: Message, user_id: str):
     # Get accumulated media IDs
     media_ids = MediaList.get(user_id, [])
-    # media_ids = MediaList.pop(user_id, [])
     if not media_ids:
         return
         
@@ -237,12 +241,11 @@ async def process_batch(bot: Client, message: Message, user_id: str):
         user_id=user_id, 
         MediaList=MediaList
     )
-
-    # Cleanup old entries
-    MediaList[user_id] = []
-    UserTasks.pop(user_id, None)
+    
+    # Cleanup: Clear MediaList and cancel any pending tasks
+    MediaList[user_id] = []  # Clear the list for the user
     if user_id in UserTasks:
-        del UserTasks[user_id]
+        del UserTasks[user_id]  # Remove the task
         
 # Function to send a message to all users
 async def broadcast_message(bot: Client, message: Message):
