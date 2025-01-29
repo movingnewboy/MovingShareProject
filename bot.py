@@ -176,6 +176,11 @@ async def main(bot: Client, message: Message):
         # Schedule new batch processing task
         UserTasks[user_id] = asyncio.create_task(
             process_batch(bot, message, user_id)
+            # Cleanup
+            MediaList[user_id] = []
+            UserTasks.pop(user_id, None)
+            if user_id in UserTasks:
+                del UserTasks[user_id]
         )
 
     elif message.chat.type == enums.ChatType.CHANNEL:
@@ -237,12 +242,6 @@ async def process_batch(bot: Client, message: Message, user_id: str):
         user_id=user_id, 
         MediaList=MediaList
     )
-    
-    # Cleanup
-    MediaList[user_id] = []
-    UserTasks.pop(user_id, None)
-    # if user_id in UserTasks:
-    #     del UserTasks[user_id]
         
 # Function to send a message to all users
 async def broadcast_message(bot: Client, message: Message):
