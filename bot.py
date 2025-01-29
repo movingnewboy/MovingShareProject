@@ -161,35 +161,21 @@ async def main(bot: Client, message: Message):
         if Config.OTHER_USERS_CAN_SAVE_FILE is False:
             return
 
-        # Ensure the user has a batch lock initialized
-        if user_id not in batch_locks:
-            batch_locks[user_id] = asyncio.Lock()
-
-        async with batch_locks[user_id]:  # Lock to prevent multiple batch processes
-            # Check if the user has a timer running
-            if user_id in UserTimers and time.time() - UserTimers[user_id] < TIME_WINDOW:
-                if MediaList.get(user_id) is None:
-                    MediaList[user_id] = []
-                MediaList[user_id].append(message.id)
-
-            else:
-                # If it's a new batch, start a new timer
-                UserTimers[user_id] = time.time()
-                MediaList[user_id] = [message.id]  # Start a new batch list
-
-            current_time = time.time()
-            if user_id not in token_start_time:  # First file in batch, initialize timer
-                token_start_time[user_id] = current_time
-
-            # Wait for TOKEN_EXPIRATION, then generate the batch link
-            await asyncio.sleep(TOKEN_EXPIRATION)
-
-            # Check if batch should be processed
-            if token_start_time.get(user_id) == current_time:  # Ensure no new file arrived
-                token_start_time.pop(user_id, None)  # Reset batch token
-                await message.reply_text("Please wait, generating batch link ...", disable_web_page_preview=True)
-                await save_batch_media_in_channel(bot=bot, editable=message, user_id=user_id, MediaList=MediaList)
-                MediaList[user_id] = []  # Clear the batch list
+        # Initialize MediaList if needed
+        if MediaList.get(user_id) is None:
+            MediaList[user_id] = []
+            
+        # Add current file to batch
+        MediaList[user_id].append(message.id)
+        
+        # Cancel previous scheduled task
+        if user_id in UserTasks:
+            UserTasks[user_id].cancel()
+            
+        # Schedule new batch processing task
+        UserTasks[user_id] = asyncio.create_task(
+            process_batch(bot, message, user_id)
+        )
 
     elif message.chat.type == enums.ChatType.CHANNEL:
         if (message.chat.id == int(Config.LOG_CHANNEL)) or (message.chat.id == int(Config.UPDATES_CHANNEL)) or message.forward_from_chat or message.forward_from:
@@ -228,7 +214,33 @@ async def main(bot: Client, message: Message):
                 text=f"#ERROR_TRACEBACK:\nGot Error from `{str(message.chat.id)}` !!\n\n**Traceback:** `{err}`",
                 disable_web_page_preview=True
             )
-            
+
+async def process_batch(bot: Client, message: Message, user_id: str):
+    # Wait for expiration period after last file
+    await asyncio.sleep(TOKEN_EXPIRATION)
+    
+    # Get accumulated media IDs
+    media_ids = MediaList.get(user_id, [])
+    if not media_ids:
+        return
+        
+    # Send processing message
+    await message.reply_text("Please wait, generating batch link...", 
+                            disable_web_page_preview=True)
+    
+    # Process batch (ensure your save_batch_media_in_channel handles media_ids)
+    await save_batch_media_in_channel(
+        bot=bot, 
+        editable=message, 
+        user_id=user_id, 
+        MediaList=MediaList
+    )
+    
+    # Cleanup
+    MediaList[user_id] = []
+    if user_id in UserTasks:
+        del UserTasks[user_id]
+        
 # Function to send a message to all users
 async def broadcast_message(bot: Client, message: Message):
     all_users = await db.get_all_users()  # Fetch all user IDs from your database
