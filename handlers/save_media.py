@@ -144,14 +144,16 @@ async def save_batch_media_in_channel(bot: Client, editable: Message, user_id: s
             # Check if the message contains a file and retrieve the size
             file_size = None
             file_name = None
-            media = getattr(message, "document", None)
+            # media = getattr(message, "document", None)
             if message.document:
                 file_size = message.document.file_size
-                file_name = media.file_name
+                file_name = message.document.file_name
             elif message.video:
                 file_size = message.video.file_size
+                file_name = message.video.file_name
             elif message.audio:
                 file_size = message.audio.file_size
+                file_name = message.audio.file_name
             
             if file_size is not None:
                 file_sizes.append(file_size)
