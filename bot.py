@@ -46,6 +46,7 @@ from handlers.save_media import (
 MediaList = {}
 # Dictionary to store the timestamp of when a user started sending files
 UserTimers = {}
+UserTasks = {}  # Tracks active batch tasks per user
 
 # The time window for accepting files is 5 seconds
 TIME_WINDOW = 6
