@@ -176,12 +176,13 @@ async def main(bot: Client, message: Message):
         # Schedule new batch processing task
         UserTasks[user_id] = asyncio.create_task(
             process_batch(bot, message, user_id)
-            # Cleanup
-            MediaList[user_id] = []
-            UserTasks.pop(user_id, None)
-            if user_id in UserTasks:
-                del UserTasks[user_id]
         )
+        
+        # Cleanup
+        MediaList[user_id] = []
+        UserTasks.pop(user_id, None)
+        if user_id in UserTasks:
+            del UserTasks[user_id]
 
     elif message.chat.type == enums.ChatType.CHANNEL:
         if (message.chat.id == int(Config.LOG_CHANNEL)) or (message.chat.id == int(Config.UPDATES_CHANNEL)) or message.forward_from_chat or message.forward_from:
