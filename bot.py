@@ -222,6 +222,7 @@ async def process_batch(bot: Client, message: Message, user_id: str):
     
     # Get accumulated media IDs
     media_ids = MediaList.get(user_id, [])
+    # media_ids = MediaList.pop(user_id, [])
     if not media_ids:
         return
         
@@ -239,8 +240,9 @@ async def process_batch(bot: Client, message: Message, user_id: str):
     
     # Cleanup
     MediaList[user_id] = []
-    if user_id in UserTasks:
-        del UserTasks[user_id]
+    UserTasks.pop(user_id, None)
+    # if user_id in UserTasks:
+    #     del UserTasks[user_id]
         
 # Function to send a message to all users
 async def broadcast_message(bot: Client, message: Message):
