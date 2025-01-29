@@ -51,6 +51,7 @@ UserTimers = {}
 TIME_WINDOW = 6
 token_start_time = None  # Token to track the batch start time
 TOKEN_EXPIRATION = 5  # Token expiration time in seconds
+batch_locks = {}  # Dictionary of asyncio.Lock for each user
 
 Bot = Client(
     name=Config.BOT_USERNAME,
@@ -160,34 +161,35 @@ async def main(bot: Client, message: Message):
         if Config.OTHER_USERS_CAN_SAVE_FILE is False:
             return
 
-        # Check if the user has a timer running
-        if user_id in UserTimers and time.time() - UserTimers[user_id] < TIME_WINDOW:
-            # User is within the 5-second window, add file to the batch
-            if MediaList.get(user_id) is None:
-                MediaList[user_id] = []
-            file_id = message.id  # Adjust based on the file type (document, photo, etc.)
-            MediaList[user_id].append(file_id)
-    
-        else:
-            # If it's a new batch, start a new timer
-            UserTimers[user_id] = time.time()
-            MediaList[user_id] = [message.id]  # Add the first file
+        # Ensure the user has a batch lock initialized
+        if user_id not in batch_locks:
+            batch_locks[user_id] = asyncio.Lock()
 
-        current_time = time.time()
-        if token_start_time is None:  # First file, initialize the token
-            token_start_time = current_time
+        async with batch_locks[user_id]:  # Lock to prevent multiple batch processes
+            # Check if the user has a timer running
+            if user_id in UserTimers and time.time() - UserTimers[user_id] < TIME_WINDOW:
+                if MediaList.get(user_id) is None:
+                    MediaList[user_id] = []
+                MediaList[user_id].append(message.id)
 
-        # Wait for 5 seconds, then generate the batch link
-        await asyncio.sleep(TOKEN_EXPIRATION)
-        message_ids = MediaList.get(f"{str(message.from_user.id)}", None)
+            else:
+                # If it's a new batch, start a new timer
+                UserTimers[user_id] = time.time()
+                MediaList[user_id] = [message.id]  # Start a new batch list
 
-        # Check if the token has expired (no new files during the wait period)
-        if token_start_time is not None:  # Ensure no other files were added
-            token_start_time = None
-            await message.reply_text("Please wait, generating batch link ...", disable_web_page_preview=True)
-            # await save_batch_media_in_channel(bot, message, user_id)  # Generate the batch link
-            await save_batch_media_in_channel(bot=bot, editable=message, user_id=user_id, MediaList=MediaList)  # Generate the batch link
-            MediaList[user_id] = []  # Reset the token and clear the batch
+            current_time = time.time()
+            if user_id not in token_start_time:  # First file in batch, initialize timer
+                token_start_time[user_id] = current_time
+
+            # Wait for TOKEN_EXPIRATION, then generate the batch link
+            await asyncio.sleep(TOKEN_EXPIRATION)
+
+            # Check if batch should be processed
+            if token_start_time.get(user_id) == current_time:  # Ensure no new file arrived
+                token_start_time.pop(user_id, None)  # Reset batch token
+                await message.reply_text("Please wait, generating batch link ...", disable_web_page_preview=True)
+                await save_batch_media_in_channel(bot=bot, editable=message, user_id=user_id, MediaList=MediaList)
+                MediaList[user_id] = []  # Clear the batch list
 
     elif message.chat.type == enums.ChatType.CHANNEL:
         if (message.chat.id == int(Config.LOG_CHANNEL)) or (message.chat.id == int(Config.UPDATES_CHANNEL)) or message.forward_from_chat or message.forward_from:
