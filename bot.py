@@ -49,7 +49,7 @@ UserTimers = {}
 
 # The time window for accepting files is 5 seconds
 TIME_WINDOW = 6
-token_start_time = None  # Token to track the batch start time
+token_start_time = {}  # Token to track the batch start time
 TOKEN_EXPIRATION = 5  # Token expiration time in seconds
 batch_locks = {}  # Dictionary of asyncio.Lock for each user
 
