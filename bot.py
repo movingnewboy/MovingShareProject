@@ -56,7 +56,7 @@ from collections import deque
 # batch_locks = {}  # Dictionary of asyncio.Lock for each user
 
 # Global variables
-UserBatches = {}  # Key: user_id, Value: deque of batches
+UserQueues = {}  # Key: user_id, Value: asyncio.Queue
 TOKEN_EXPIRATION = 3  # Wait 3 seconds after the last file
 
 class Batch:
@@ -174,33 +174,14 @@ async def main(bot: Client, message: Message):
         if Config.OTHER_USERS_CAN_SAVE_FILE is False:
             return
 
-        # Initialize UserBatches if needed
-        if user_id not in UserBatches:
-            UserBatches[user_id] = deque()
+        # Initialize Queue for the user if needed
+        if user_id not in UserQueues:
+            UserQueues[user_id] = asyncio.Queue()
+            # Start a background task to process the queue
+            asyncio.create_task(process_user_queue(bot, message, user_id))
 
-        # Find the first non-processing batch (if exists)
-        active_batch = None
-        for batch in UserBatches[user_id]:
-            if not batch.processing:
-                active_batch = batch
-                break
-
-        if active_batch:
-            # Add file to the active batch and reset its timer
-            active_batch.media_ids.append(message.id)
-            if active_batch.task:
-                active_batch.task.cancel()
-            active_batch.task = asyncio.create_task(
-                process_batch_after_timeout(bot, message, user_id, active_batch)
-            )
-        else:
-            # Create a new batch
-            new_batch = Batch()
-            new_batch.media_ids.append(message.id)
-            new_batch.task = asyncio.create_task(
-                process_batch_after_timeout(bot, message, user_id, new_batch)
-            )
-            UserBatches[user_id].append(new_batch)
+        # Add the current file to the user's queue
+        await UserQueues[user_id].put(message.id)
             
         # current_time = time.time()
         
@@ -265,20 +246,40 @@ async def main(bot: Client, message: Message):
                 disable_web_page_preview=True
             )
 
-async def process_batch_after_timeout(bot: Client, message: Message, user_id: str, batch: Batch):
-    await asyncio.sleep(TOKEN_EXPIRATION)
-    batch.processing = True  # Mark batch as processing
+async def process_user_queue(bot: Client, message: Message, user_id: str):
+    queue = UserQueues.get(user_id)
+    if not queue:
+        return
+
+    batch = []
+    while True:
+        try:
+            # Wait for a file or timeout
+            file_id = await asyncio.wait_for(queue.get(), timeout=TOKEN_EXPIRATION)
+            batch.append(file_id)
+        except asyncio.TimeoutError:
+            # Timeout occurred, process the batch
+            if batch:
+                await process_batch(bot, message, user_id, batch)
+                batch = []  # Reset the batch
+        except Exception as e:
+            print(f"Error processing queue for user {user_id}: {e}")
+            break
+
+async def process_batch(bot: Client, message: Message, user_id: str, batch: list):
+    if not batch:
+        return
+        
+    await message.reply_text("Please wait, generating batch link...", 
+                            disable_web_page_preview=True)
     
-    # Process the batch
-    if batch.media_ids:
-        await message.reply_text("Please wait, generating batch link...", 
-                                disable_web_page_preview=True)
-        await save_batch_media_in_channel(bot, message, user_id, batch.media_ids)
-    
-    # Cleanup: Remove the batch from the user's queue
-    if user_id in UserBatches and batch in UserBatches[user_id]:
-        UserBatches[user_id].remove(batch)
-    batch.processing = False
+    # Process batch (ensure your save_batch_media_in_channel handles batch)
+    await save_batch_media_in_channel(
+        bot=bot, 
+        editable=message, 
+        user_id=user_id, 
+        batch=batch
+    )
     
 # async def process_batch_after_timeout(bot: Client, message: Message, user_id: str):
 #     await asyncio.sleep(TOKEN_EXPIRATION)
