@@ -41,18 +41,29 @@ from handlers.save_media import (
     save_media_in_channel,
     save_batch_media_in_channel
 )
+from collections import deque
 
-# Dictionary to store media for users
-MediaList = {}
-# Dictionary to store the timestamp of when a user started sending files
-UserTimers = {}
-UserTasks = {}  # Tracks active batch tasks per user
+# # Dictionary to store media for users
+# MediaList = {}
+# # Dictionary to store the timestamp of when a user started sending files
+# UserTimers = {}
+# UserTasks = {}  # Tracks active batch tasks per user
 
-# The time window for accepting files is 5 seconds
-TIME_WINDOW = 3
-token_start_time = {}  # Token to track the batch start time
-TOKEN_EXPIRATION = 3  # Token expiration time in seconds
-batch_locks = {}  # Dictionary of asyncio.Lock for each user
+# # The time window for accepting files is 5 seconds
+# TIME_WINDOW = 3
+# token_start_time = {}  # Token to track the batch start time
+# TOKEN_EXPIRATION = 3  # Token expiration time in seconds
+# batch_locks = {}  # Dictionary of asyncio.Lock for each user
+
+# # Global variables
+# UserBatches = {}  # Key: user_id, Value: deque of batches
+# TOKEN_EXPIRATION = 3  # Wait 3 seconds after the last file
+
+class Batch:
+    def __init__(self):
+        self.media_ids = []  # Files in this batch
+        self.task = None     # Task for processing this batch
+        self.processing = False  # Whether the batch is being processed
 
 Bot = Client(
     name=Config.BOT_USERNAME,
@@ -162,30 +173,58 @@ async def main(bot: Client, message: Message):
         if Config.OTHER_USERS_CAN_SAVE_FILE is False:
             return
 
-        current_time = time.time()
-        
-        # Clear MediaList if the user starts a new batch after inactivity
-        if user_id in UserTimers:
-            time_since_last = current_time - UserTimers[user_id]
-            if time_since_last > TOKEN_EXPIRATION:
-                MediaList[user_id] = []  # Reset for new batch
-        UserTimers[user_id] = current_time  # Update last activity time
+        # Initialize UserBatches if needed
+        if user_id not in UserBatches:
+            UserBatches[user_id] = deque()
 
-        # Initialize MediaList if needed
-        if MediaList.get(user_id) is None:
-            MediaList[user_id] = []
+        # Find the first non-processing batch (if exists)
+        active_batch = None
+        for batch in UserBatches[user_id]:
+            if not batch.processing:
+                active_batch = batch
+                break
+
+        if active_batch:
+            # Add file to the active batch and reset its timer
+            active_batch.media_ids.append(message.id)
+            if active_batch.task:
+                active_batch.task.cancel()
+            active_batch.task = asyncio.create_task(
+                process_batch_after_timeout(bot, message, user_id, active_batch)
+            )
+        else:
+            # Create a new batch
+            new_batch = Batch()
+            new_batch.media_ids.append(message.id)
+            new_batch.task = asyncio.create_task(
+                process_batch_after_timeout(bot, message, user_id, new_batch)
+            )
+            UserBatches[user_id].append(new_batch)
             
-        # Add current file to batch
-        MediaList[user_id].append(message.id)
+        # current_time = time.time()
         
-        # Cancel previous scheduled task
-        if user_id in UserTasks:
-            UserTasks[user_id].cancel()
+        # # Clear MediaList if the user starts a new batch after inactivity
+        # if user_id in UserTimers:
+        #     time_since_last = current_time - UserTimers[user_id]
+        #     if time_since_last > TOKEN_EXPIRATION:
+        #         MediaList[user_id] = []  # Reset for new batch
+        # UserTimers[user_id] = current_time  # Update last activity time
+
+        # # Initialize MediaList if needed
+        # if MediaList.get(user_id) is None:
+        #     MediaList[user_id] = []
             
-        # Schedule new task to process batch after timeout
-        UserTasks[user_id] = asyncio.create_task(
-            process_batch_after_timeout(bot, message, user_id)
-        )
+        # # Add current file to batch
+        # MediaList[user_id].append(message.id)
+        
+        # # Cancel previous scheduled task
+        # if user_id in UserTasks:
+        #     UserTasks[user_id].cancel()
+            
+        # # Schedule new task to process batch after timeout
+        # UserTasks[user_id] = asyncio.create_task(
+        #     process_batch_after_timeout(bot, message, user_id)
+        # )
 
     elif message.chat.type == enums.ChatType.CHANNEL:
         if (message.chat.id == int(Config.LOG_CHANNEL)) or (message.chat.id == int(Config.UPDATES_CHANNEL)) or message.forward_from_chat or message.forward_from:
@@ -225,35 +264,42 @@ async def main(bot: Client, message: Message):
                 disable_web_page_preview=True
             )
 
-async def process_batch_after_timeout(bot: Client, message: Message, user_id: str):
+async def process_batch_after_timeout(bot: Client, message: Message, user_id: str, batch: Batch):
     await asyncio.sleep(TOKEN_EXPIRATION)
+    batch.processing = True  # Mark batch as processing
     
-    # Check if the user hasn"t sent new files during the wait
-    if user_id in UserTimers:
-        time_since_last = time.time() - UserTimers[user_id]
-        if time_since_last >= TOKEN_EXPIRATION:
-            await process_batch(bot, message, user_id)
+    # Process the batch
+    if batch.media_ids:
+        await message.reply_text("Please wait, generating batch link...", 
+                                disable_web_page_preview=True)
+        await save_batch_media_in_channel(bot, message, user_id, batch.media_ids)
+    
+    # Cleanup: Remove the batch from the user's queue
+    if user_id in UserBatches and batch in UserBatches[user_id]:
+        UserBatches[user_id].remove(batch)
+    batch.processing = False
+    
+# async def process_batch_after_timeout(bot: Client, message: Message, user_id: str):
+#     await asyncio.sleep(TOKEN_EXPIRATION)
+    
+#     # Check if the user hasn"t sent new files during the wait
+#     if user_id in UserTimers:
+#         time_since_last = time.time() - UserTimers[user_id]
+#         if time_since_last >= TOKEN_EXPIRATION:
+#             await process_batch(bot, message, user_id)
 
-async def process_batch(bot: Client, message: Message, user_id: str):
-    media_ids = MediaList.get(user_id, [])
-    if not media_ids:
-        return
+# async def process_batch(bot: Client, message: Message, user_id: str):
+#     media_ids = MediaList.get(user_id, [])
+#     if not media_ids:
+#         return
         
-    await message.reply_text("Please wait, generating batch link...")
-    await save_batch_media_in_channel(bot, message, user_id, MediaList)
-
-    # Process batch (ensure your save_batch_media_in_channel handles media_ids)
-    # await save_batch_media_in_channel(
-    #     bot=bot, 
-    #     editable=message, 
-    #     user_id=user_id, 
-    #     MediaList=MediaList
-    # )
+#     await message.reply_text("Please wait, generating batch link...")
+#     await save_batch_media_in_channel(bot, message, user_id, MediaList)
     
-    # Cleanup
-    MediaList[user_id] = []  # Clear the list
-    if user_id in UserTasks:
-        del UserTasks[user_id]
+#     # Cleanup
+#     MediaList[user_id] = []  # Clear the list
+#     if user_id in UserTasks:
+#         del UserTasks[user_id]
         
 
 # Function to send a message to all users
