@@ -154,7 +154,8 @@ async def start(bot: Client, cmd: Message):
 @Bot.on_message((filters.document | filters.video | filters.audio | filters.photo) & ~filters.chat(Config.DB_CHANNEL))
 async def main(bot: Client, message: Message):
     
-    global token_start_time
+    # global token_start_time
+    global UserBatches  # Ensure UserBatches is accessible
     user_id = str(message.from_user.id)
     if message.chat.type == enums.ChatType.PRIVATE:
         
