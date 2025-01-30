@@ -55,9 +55,9 @@ from collections import deque
 # TOKEN_EXPIRATION = 3  # Token expiration time in seconds
 # batch_locks = {}  # Dictionary of asyncio.Lock for each user
 
-# # Global variables
-# UserBatches = {}  # Key: user_id, Value: deque of batches
-# TOKEN_EXPIRATION = 3  # Wait 3 seconds after the last file
+# Global variables
+UserBatches = {}  # Key: user_id, Value: deque of batches
+TOKEN_EXPIRATION = 3  # Wait 3 seconds after the last file
 
 class Batch:
     def __init__(self):
