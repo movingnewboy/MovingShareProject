@@ -272,13 +272,13 @@ async def process_batch(bot: Client, message: Message, user_id: str, batch: list
         
     await message.reply_text("Please wait, generating batch link...", 
                             disable_web_page_preview=True)
-    
+    MediaList = {user_id: batch}
     # Process batch (ensure your save_batch_media_in_channel handles batch)
     await save_batch_media_in_channel(
         bot=bot, 
         editable=message, 
         user_id=user_id, 
-        batch=batch
+        MediaList=MediaList
     )
     
 # async def process_batch_after_timeout(bot: Client, message: Message, user_id: str):
