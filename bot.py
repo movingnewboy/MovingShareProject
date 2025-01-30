@@ -162,6 +162,15 @@ async def main(bot: Client, message: Message):
         if Config.OTHER_USERS_CAN_SAVE_FILE is False:
             return
 
+        current_time = time.time()
+        
+        # Clear MediaList if the user starts a new batch after inactivity
+        if user_id in UserTimers:
+            time_since_last = current_time - UserTimers[user_id]
+            if time_since_last > TOKEN_EXPIRATION:
+                MediaList[user_id] = []  # Reset for new batch
+        UserTimers[user_id] = current_time  # Update last activity time
+
         # Initialize MediaList if needed
         if MediaList.get(user_id) is None:
             MediaList[user_id] = []
@@ -173,7 +182,7 @@ async def main(bot: Client, message: Message):
         if user_id in UserTasks:
             UserTasks[user_id].cancel()
             
-        # Schedule new batch processing task
+        # Schedule new task to process batch after timeout
         UserTasks[user_id] = asyncio.create_task(
             process_batch_after_timeout(bot, message, user_id)
         )
@@ -217,36 +226,36 @@ async def main(bot: Client, message: Message):
             )
 
 async def process_batch_after_timeout(bot: Client, message: Message, user_id: str):
-    # Wait for expiration period after first file
     await asyncio.sleep(TOKEN_EXPIRATION)
     
-    # Process the batch only if MediaList[user_id] is not empty
-    if MediaList.get(user_id):
-        await process_batch(bot, message, user_id)
+    # Check if the user hasn"t sent new files during the wait
+    if user_id in UserTimers:
+        time_since_last = time.time() - UserTimers[user_id]
+        if time_since_last >= TOKEN_EXPIRATION:
+            await process_batch(bot, message, user_id)
 
 async def process_batch(bot: Client, message: Message, user_id: str):
-    # Get accumulated media IDs
     media_ids = MediaList.get(user_id, [])
     if not media_ids:
         return
         
-    # Send processing message
-    await message.reply_text("Please wait, generating batch link...", 
-                            disable_web_page_preview=True)
-    
+    await message.reply_text("Please wait, generating batch link...")
+    await save_batch_media_in_channel(bot, message, user_id, MediaList)
+
     # Process batch (ensure your save_batch_media_in_channel handles media_ids)
-    await save_batch_media_in_channel(
-        bot=bot, 
-        editable=message, 
-        user_id=user_id, 
-        MediaList=MediaList
-    )
+    # await save_batch_media_in_channel(
+    #     bot=bot, 
+    #     editable=message, 
+    #     user_id=user_id, 
+    #     MediaList=MediaList
+    # )
     
-    # Cleanup: Clear MediaList and cancel any pending tasks
-    MediaList[user_id] = []  # Clear the list for the user
+    # Cleanup
+    MediaList[user_id] = []  # Clear the list
     if user_id in UserTasks:
-        del UserTasks[user_id]  # Remove the task
+        del UserTasks[user_id]
         
+
 # Function to send a message to all users
 async def broadcast_message(bot: Client, message: Message):
     all_users = await db.get_all_users()  # Fetch all user IDs from your database
