@@ -5,7 +5,7 @@ class Config(object):
   API_HASH = os.environ.get("API_HASH", "f19aed00b0c74abed0359016afc1733f")
 
   BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-  BOT_USERNAME = os.environ.get("BOT_USERNAME", "QL_Hollywood_Dubbed_Movies_Bot")
+  BOT_USERNAME = os.environ.get("BOT_USERNAME", "Hollywood_Movies_Tamil_Dubbedbot")
   LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1002025122235"))
   UPDATES_CHANNEL = os.environ.get("UPDATES_CHANNEL", "-1002025747602")
   CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002478513434"))
