@@ -13,8 +13,8 @@ class Config(object):
   DB_CHANNEL = int(os.environ.get("DB_CHANNEL", "-1002038837206")) #Common
   # SHORTLINK_URL = os.environ.get('SHORTLINK_URL', "modijiurl.com")
   # SHORTLINK_API = os.environ.get('SHORTLINK_API', "0f7f8b24825560cc57765f8fcc04b9aafacf8c43")
-  SHORTLINK_URL = os.environ.get('SHORTLINK_URL', "papajiurl.com")
-  SHORTLINK_API = os.environ.get('SHORTLINK_API', "b2d855aebb7ed00f5fb2d22291cdcff24eab5e13")
+  SHORTLINK_URL = os.environ.get('SHORTLINK_URL', "krownlinks.com")
+  SHORTLINK_API = os.environ.get('SHORTLINK_API', "4e4184f6cc1e896924d65afb0deac87ec06231ca")
   BOT_OWNER = int(os.environ.get("BOT_OWNER", "807374433"))
   DATABASE_URL = os.environ.get("DATABASE_URL", "mongodb+srv://leecher:leecher@cluster0.606mkpi.mongodb.net/?retryWrites=true&w=majority")
   
