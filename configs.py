@@ -5,10 +5,10 @@ class Config(object):
   API_HASH = os.environ.get("API_HASH", "f19aed00b0c74abed0359016afc1733f") 
   
   BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-  BOT_USERNAME = os.environ.get("BOT_USERNAME", "Quality_New_Movies_Bot")
-  LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1001924724963"))
-  UPDATES_CHANNEL = os.environ.get("UPDATES_CHANNEL", "-1002025747602")
-  CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002478513434"))
+  BOT_USERNAME = os.environ.get("BOT_USERNAME", "TamilDubWebSeriesBot")
+  LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1002543124164"))
+  UPDATES_CHANNEL = os.environ.get("UPDATES_CHANNEL", "-1001385302954")
+  CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002439773458"))
   
   DB_CHANNEL = int(os.environ.get("DB_CHANNEL", "-1002038837206")) #Common
   # SHORTLINK_URL = os.environ.get('SHORTLINK_URL', "modijiurl.com")
