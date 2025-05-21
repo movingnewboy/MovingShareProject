@@ -30,4 +30,8 @@ RUN pip3 install -r requirements.txt
 RUN dpkg-reconfigure locales
 COPY . /app
 
-CMD ["python3", "bot.py"]
+# Copy and use the start script
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
+CMD ["/start.sh"]
