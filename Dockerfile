@@ -8,7 +8,7 @@ RUN apt -qq install -y --no-install-recommends \
     curl \
     git \
     gnupg2 \
-    wget \
+    wget
 
 RUN set -ex; \
     apt-get update \
