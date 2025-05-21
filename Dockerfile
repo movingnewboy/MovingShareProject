@@ -25,13 +25,15 @@ RUN set -ex; \
         && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install setuptools wheel yarl multidict
+WORKDIR /app
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
-RUN dpkg-reconfigure locales
-COPY . /app
+# RUN dpkg-reconfigure locales
+# COPY . /app
+COPY . .
 
 # Copy and use the start script
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+# COPY start.sh /start.sh
+RUN chmod +x /app/start.sh
 
 CMD ["/app/start.sh"]
